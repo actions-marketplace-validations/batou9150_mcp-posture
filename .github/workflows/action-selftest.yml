@@ -1,0 +1,44 @@
+name: Action self-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Start local fixture servers
+        run: |
+          uv sync --locked
+          nohup uv run python scripts/demo_servers.py > demo.log 2>&1 &
+          for _ in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:8402/mcp && exit 0; sleep 1; done
+          cat demo.log; exit 1
+      - name: Run the action against the misconfigured fixture
+        id: scan
+        uses: ./
+        with:
+          targets: |
+            http://127.0.0.1:8402/mcp  # misconfigured fixture
+          args: --allow-private --retries 0
+          upload-sarif: "false"
+          fail: "false"
+      - name: Check outputs
+        env:
+          CODE: ${{ steps.scan.outputs.exit-code }}
+          SARIF: ${{ steps.scan.outputs.sarif-file }}
+          REPORT: ${{ steps.scan.outputs.json-file }}
+        run: |
+          test "$CODE" = "1"
+          jq -e '.runs[0].results | length > 0' "$SARIF"
+          jq -e '.targets[0].findings | map(.check_id) | index("MCPP-ASM04") != null' "$REPORT"

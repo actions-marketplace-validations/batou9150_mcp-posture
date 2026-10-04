@@ -87,7 +87,12 @@ def load_all() -> dict[str, RegisteredCheck]:
 
 
 def catalogue() -> list[CheckMeta]:
-    return [REGISTRY[k].meta for k in sorted(load_all())]
+    """Every documented rule: scan checks plus ``cimd lint`` rules."""
+    from mcp_posture.cimd_lint import LINT_RULES
+
+    metas = {k: c.meta for k, c in load_all().items()}
+    metas.update({k: r.meta for k, r in LINT_RULES.items()})
+    return [metas[k] for k in sorted(metas)]
 
 
 ERROR_CHECK_ID = "MCPP-ERR00"

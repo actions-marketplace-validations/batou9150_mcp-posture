@@ -6,9 +6,10 @@ import re
 from pathlib import Path
 
 from mcp_posture.models import Severity
-from mcp_posture.registry import catalogue, load_all
+from mcp_posture.registry import catalogue
 
 TESTS = Path(__file__).parent
+TEXT_SUFFIXES = {".py", ".md", ".toml", ".json", ".txt", ".yml", ".yaml", ".tape"}
 MARK = re.compile(r"mark\.check\(\s*\"(positive|negative)\"((?:\s*,\s*\"MCPP-[A-Z]+\d{2}\")+)")
 
 
@@ -22,7 +23,7 @@ def _marked() -> dict[str, set[str]]:
 
 def test_every_check_has_positive_and_negative_tests() -> None:
     marked = _marked()
-    registered = set(load_all())
+    registered = {m.id for m in catalogue()}
     assert registered - marked["positive"] == set(), "checks without a positive test"
     assert registered - marked["negative"] == set(), "checks without a negative test"
     assert (marked["positive"] | marked["negative"]) - registered == set(), "unknown ids in marks"
@@ -51,9 +52,9 @@ def test_repository_has_no_invisible_characters() -> None:
 
     root = TESTS.parent
     offenders = []
-    for folder in ("src", "tests", "scripts", "docs"):
+    for folder in ("src", "tests", "scripts", "docs", "skills", ".claude-plugin", ".github"):
         for path in (root / folder).rglob("*"):
-            if path.suffix not in {".py", ".md", ".toml", ".json", ".txt", ".yml", ".yaml"}:
+            if path.suffix not in TEXT_SUFFIXES:
                 continue
             text = path.read_text(encoding="utf-8")
             bad = {

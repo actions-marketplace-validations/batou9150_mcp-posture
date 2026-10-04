@@ -1,0 +1,141 @@
+name: mcp-posture
+description: Scan remote MCP servers for OAuth, transport and tool-surface security issues; upload SARIF to code scanning.
+author: batou9150
+branding:
+  icon: shield
+  color: purple
+
+inputs:
+  targets:
+    description: MCP endpoint URLs, one per line. Optional when a config, targets file or client config provides them.
+    required: false
+    default: ""
+  config:
+    description: Path to mcp-posture.toml (defaults to ./mcp-posture.toml when present).
+    required: false
+    default: ""
+  targets-file:
+    description: File with one URL per line (results are anchored to it in code scanning).
+    required: false
+    default: ""
+  fail-on:
+    description: Fail the step when a finding is at least this severe (info, low, medium, high, critical).
+    required: false
+    default: high
+  baseline:
+    description: Lock file from `mcp-posture pin` for rug-pull detection.
+    required: false
+    default: ""
+  token:
+    description: Optional bearer token (pass a secret) used to list tools behind authentication. Never logged.
+    required: false
+    default: ""
+  args:
+    description: Extra arguments for `mcp-posture scan`.
+    required: false
+    default: ""
+  upload-sarif:
+    description: "Upload results to GitHub code scanning (needs `security-events: write`)."
+    required: false
+    default: "true"
+  sarif-category:
+    description: Code scanning category, to keep several scans apart.
+    required: false
+    default: mcp-posture
+  job-summary:
+    description: Append the Markdown report to the job summary.
+    required: false
+    default: "true"
+  fail:
+    description: Fail the step on blocking findings (set to false to only report).
+    required: false
+    default: "true"
+
+outputs:
+  exit-code:
+    description: "mcp-posture exit code: 0 clean, 1 findings at or above fail-on, 2 usage error, 3 unreachable target."
+    value: ${{ steps.scan.outputs.exit-code }}
+  sarif-file:
+    description: Path to the SARIF report.
+    value: ${{ steps.scan.outputs.sarif-file }}
+  json-file:
+    description: Path to the JSON report.
+    value: ${{ steps.scan.outputs.json-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: false
+
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        # Inputs reach the script through the environment, never through template expansion
+        # into the shell source (no script injection from untrusted input values).
+        MCPP_TARGETS: ${{ inputs.targets }}
+        MCPP_CONFIG: ${{ inputs.config }}
+        MCPP_TARGETS_FILE: ${{ inputs.targets-file }}
+        MCPP_FAIL_ON: ${{ inputs.fail-on }}
+        MCPP_BASELINE: ${{ inputs.baseline }}
+        MCPP_ARGS: ${{ inputs.args }}
+        MCPP_ACTION_TOKEN: ${{ inputs.token }}
+        MCPP_SOURCE: ${{ github.action_path }}
+        MCPP_OUT: ${{ runner.temp }}/mcp-posture
+      run: |
+        set -uo pipefail
+        mkdir -p "$MCPP_OUT"
+        cmd=(scan --fail-on "$MCPP_FAIL_ON" --sarif "$MCPP_OUT/results.sarif"
+             --json "$MCPP_OUT/results.json" --markdown "$MCPP_OUT/summary.md")
+        while IFS= read -r line; do
+          line="${line%%#*}"; line="$(echo "$line" | xargs)"
+          [ -n "$line" ] && cmd+=("$line")
+        done <<< "$MCPP_TARGETS"
+        [ -n "$MCPP_CONFIG" ] && cmd+=(--config "$MCPP_CONFIG")
+        [ -n "$MCPP_TARGETS_FILE" ] && cmd+=(--targets-file "$MCPP_TARGETS_FILE")
+        [ -n "$MCPP_BASELINE" ] && cmd+=(--baseline "$MCPP_BASELINE")
+        [ -n "$MCPP_ACTION_TOKEN" ] && cmd+=(--token-env MCPP_ACTION_TOKEN)
+        if [ -n "$MCPP_ARGS" ]; then
+          read -r -a extra <<< "$MCPP_ARGS"
+          cmd+=("${extra[@]}")
+        fi
+        uvx --quiet --from "$MCPP_SOURCE" mcp-posture "${cmd[@]}"
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "sarif-file=$MCPP_OUT/results.sarif" >> "$GITHUB_OUTPUT"
+        echo "json-file=$MCPP_OUT/results.json" >> "$GITHUB_OUTPUT"
+        if [ "$code" -eq 2 ]; then
+          echo "::error title=mcp-posture::usage or configuration error"
+          exit 2
+        fi
+        exit 0
+
+    - name: Job summary
+      if: always() && inputs.job-summary == 'true' && steps.scan.outputs.exit-code != '2'
+      shell: bash
+      env:
+        MCPP_SUMMARY: ${{ runner.temp }}/mcp-posture/summary.md
+      run: '[ -f "$MCPP_SUMMARY" ] && cat "$MCPP_SUMMARY" >> "$GITHUB_STEP_SUMMARY" || true'
+
+    - name: Upload SARIF
+      if: always() && inputs.upload-sarif == 'true' && steps.scan.outputs.exit-code != '2'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: ${{ inputs.sarif-category }}
+
+    - name: Enforce result
+      if: inputs.fail == 'true'
+      shell: bash
+      env:
+        MCPP_CODE: ${{ steps.scan.outputs.exit-code }}
+      run: |
+        case "$MCPP_CODE" in
+          0) echo "mcp-posture: no blocking findings" ;;
+          1) echo "::error title=mcp-posture::blocking findings, see the job summary"; exit 1 ;;
+          3) echo "::error title=mcp-posture::a target was unreachable"; exit 3 ;;
+          *) exit "$MCPP_CODE" ;;
+        esac

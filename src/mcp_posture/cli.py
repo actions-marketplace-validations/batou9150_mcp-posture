@@ -15,11 +15,12 @@ import typer
 from rich.console import Console
 
 from mcp_posture import __version__
+from mcp_posture.cimd_lint import LintInput, lint, parse_document
 from mcp_posture.config import ConfigError, ScanConfig, build_config, load_config
 from mcp_posture.context import Target
 from mcp_posture.engine import EXIT_USAGE, ScanOptions, collect_all, exit_code, scan
-from mcp_posture.models import Severity, SpecRevision
-from mcp_posture.net import NetSettings
+from mcp_posture.models import Report, Severity, SpecRevision, TargetResult, ToolInfo
+from mcp_posture.net import Fetcher, HttpExchange, NetSettings
 from mcp_posture.pin import DEFAULT_LOCK, LockError, build_lock, dump_lock, load_lock
 from mcp_posture.redact import RedactingFilter, Redactor
 from mcp_posture.registry import catalogue
@@ -43,8 +44,11 @@ app = typer.Typer(
 )
 checks_app = typer.Typer(help="Inspect the check catalogue.", no_args_is_help=True)
 app.add_typer(checks_app, name="checks")
+cimd_app = typer.Typer(help="Client ID Metadata Document tools.", no_args_is_help=True)
+app.add_typer(cimd_app, name="cimd")
 
 err = Console(stderr=True, soft_wrap=True)
+CIMD_FETCH_LIMIT = 64 * 1024
 
 
 class UsageError(Exception):
@@ -435,6 +439,95 @@ def discover_cmd(
         err.print("no remote MCP servers found")
 
 
+async def _fetch_cimd(url: str, settings: NetSettings) -> HttpExchange:
+    async with Fetcher(settings) as fetcher:
+        return await fetcher.request(
+            "GET",
+            url,
+            headers={"Accept": "application/json"},
+            follow_redirects=False,  # authorization servers MUST NOT follow redirects
+            max_bytes=CIMD_FETCH_LIMIT,
+        )
+
+
+@cimd_app.command("lint")
+def cimd_lint_cmd(
+    source: Annotated[str, typer.Argument(help="Document URL (https://...) or local file.")],
+    url: Annotated[
+        str | None,
+        typer.Option("--url", help="For a local file: the URL it will be served at."),
+    ] = None,
+    fmt: Annotated[
+        str, typer.Option("--format", "-f", help=f"Output format: {', '.join(FORMATS)}.")
+    ] = "table",
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+    fail_on: Annotated[Severity, typer.Option("--fail-on")] = Severity.HIGH,
+    allow_private: AllowPrivateOpt = False,
+    ca_bundle: Annotated[Path | None, typer.Option("--ca-bundle")] = None,
+) -> None:
+    """Validate a client's Client ID Metadata Document (draft-02 + MCP requirements)."""
+    if fmt not in FORMATS:
+        raise _fail_usage(f"unknown format {fmt!r}; choose from {', '.join(FORMATS)}")
+    exchange: HttpExchange | None = None
+    if source.startswith(("https://", "http://")):
+        settings = NetSettings(
+            retries=0,
+            allow_private=allow_private,
+            ca_bundle=str(ca_bundle) if ca_bundle else None,
+        )
+        exchange = asyncio.run(_fetch_cimd(source, settings))
+        raw = exchange.body
+        client_id_url: str | None = source
+    else:
+        try:
+            raw = Path(source).read_bytes()
+        except OSError as e:
+            raise _fail_usage(f"cannot read {source}: {e.strerror}") from None
+        client_id_url = url
+    document, parse_error = parse_document(raw) if raw else (None, "empty document")
+    if client_id_url is None and document is not None:
+        cid = document.get("client_id")
+        client_id_url = cid if isinstance(cid, str) else None
+    reachable = exchange is None or exchange.status is not None
+    findings = (
+        lint(
+            LintInput(
+                source=source,
+                document=document,
+                client_id_url=client_id_url,
+                exchange=exchange,
+                raw_size=len(raw),
+                parse_error=parse_error,
+            )
+        )
+        if reachable
+        else []
+    )
+    result = TargetResult(
+        target=source,
+        source="cimd-lint",
+        reachable=reachable,
+        error=exchange.error if exchange is not None and not reachable else None,
+        spec_revision=SpecRevision.latest(),
+        revision_source="default",
+        findings=tuple(findings),
+    )
+    report = Report(
+        tool=ToolInfo(version=__version__),
+        generated_at=None,
+        mode="lint",
+        fail_on=fail_on,
+        targets=(result,),
+    )
+    format_: Format = fmt
+    text = render(report, format_, Redactor(), color=output is None and sys.stdout.isatty())
+    if output is not None:
+        output.write_text(text, encoding="utf-8")
+    else:
+        sys.stdout.write(text)
+    raise typer.Exit(exit_code(report))
+
+
 @checks_app.command("list")
 def checks_list() -> None:
     """List every check with its severity and applicable spec revisions."""
@@ -480,4 +573,4 @@ def version_cmd() -> None:
 
 
 def main() -> None:
-    app()
+    app(prog_name="mcp-posture")

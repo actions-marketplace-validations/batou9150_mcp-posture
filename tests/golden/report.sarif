@@ -692,6 +692,254 @@
               }
             },
             {
+              "id": "MCPP-CIMD50",
+              "name": "InvalidClientIdentifierUrl",
+              "shortDescription": {
+                "text": "Invalid client identifier URL"
+              },
+              "fullDescription": {
+                "text": "The client_id of a CIMD client is a URL that authorization servers fetch and compare by simple string equality. It MUST be https with a path and MUST NOT contain userinfo, a fragment or dot segments; anything else is rejected or, worse, accepted inconsistently across servers."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd50/",
+              "help": {
+                "text": "The client_id of a CIMD client is a URL that authorization servers fetch and compare by simple string equality. It MUST be https with a path and MUST NOT contain userinfo, a fragment or dot segments; anything else is rejected or, worse, accepted inconsistently across servers.\n\nRemediation: Host the document at a stable https URL with a dedicated path, e.g. `https://app.example.com/oauth/client-metadata.json`, without query or fragment.",
+                "markdown": "The client_id of a CIMD client is a URL that authorization servers fetch and compare by simple string equality. It MUST be https with a path and MUST NOT contain userinfo, a fragment or dot segments; anything else is rejected or, worse, accepted inconsistently across servers.\n\n**Remediation:** Host the document at a stable https URL with a dedicated path, e.g. `https://app.example.com/oauth/client-metadata.json`, without query or fragment.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)\n- [MCP 2026-07-28 Client Registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD51",
+              "name": "DocumentDoesNotMatchItsUrl",
+              "shortDescription": {
+                "text": "Document client_id does not match its URL"
+              },
+              "fullDescription": {
+                "text": "Authorization servers MUST reject a document whose client_id is not exactly the URL it was fetched from (simple string comparison: no normalization of case, default ports or trailing slashes)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd51/",
+              "help": {
+                "text": "Authorization servers MUST reject a document whose client_id is not exactly the URL it was fetched from (simple string comparison: no normalization of case, default ports or trailing slashes).\n\nRemediation: Set `client_id` to the exact URL the document is served at.",
+                "markdown": "Authorization servers MUST reject a document whose client_id is not exactly the URL it was fetched from (simple string comparison: no normalization of case, default ports or trailing slashes).\n\n**Remediation:** Set `client_id` to the exact URL the document is served at.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD52",
+              "name": "RequiredClientMetadataMissing",
+              "shortDescription": {
+                "text": "Required client metadata missing"
+              },
+              "fullDescription": {
+                "text": "MCP requires client_id, client_name and redirect_uris in the document; authorization servers display client_name on consent and validate redirect_uri against redirect_uris."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd52/",
+              "help": {
+                "text": "MCP requires client_id, client_name and redirect_uris in the document; authorization servers display client_name on consent and validate redirect_uri against redirect_uris.\n\nRemediation: Add a human-readable `client_name` and a non-empty `redirect_uris` array.",
+                "markdown": "MCP requires client_id, client_name and redirect_uris in the document; authorization servers display client_name on consent and validate redirect_uri against redirect_uris.\n\n**Remediation:** Add a human-readable `client_name` and a non-empty `redirect_uris` array.\n\n- [MCP 2026-07-28 Client Registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD53",
+              "name": "UnsafeRedirectUri",
+              "shortDescription": {
+                "text": "Unsafe redirect URI"
+              },
+              "fullDescription": {
+                "text": "Authorization codes are delivered to the redirect URI. Plain-http non-loopback, wildcard, fragment or script URIs leak codes; loopback-only documents can be impersonated by any local app, which is why MCP asks authorization servers to warn on them."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd53/",
+              "help": {
+                "text": "Authorization codes are delivered to the redirect URI. Plain-http non-loopback, wildcard, fragment or script URIs leak codes; loopback-only documents can be impersonated by any local app, which is why MCP asks authorization servers to warn on them.\n\nRemediation: Use https redirect URIs (or loopback for native apps with PKCE), with exact values, no wildcards and no fragments.",
+                "markdown": "Authorization codes are delivered to the redirect URI. Plain-http non-loopback, wildcard, fragment or script URIs leak codes; loopback-only documents can be impersonated by any local app, which is why MCP asks authorization servers to warn on them.\n\n**Remediation:** Use https redirect URIs (or loopback for native apps with PKCE), with exact values, no wildcards and no fragments.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)\n- [RFC 9700 OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD54",
+              "name": "SharedSecretInAPublicMetadataDocument",
+              "shortDescription": {
+                "text": "Shared secret in a public metadata document"
+              },
+              "fullDescription": {
+                "text": "The document is public. Draft-02 §4.1 forbids client_secret, client_secret_expires_at and every shared-secret authentication method: a secret published at a URL is not a secret."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd54/",
+              "help": {
+                "text": "The document is public. Draft-02 §4.1 forbids client_secret, client_secret_expires_at and every shared-secret authentication method: a secret published at a URL is not a secret.\n\nRemediation: Remove the secret and rotate it now. Use `none` (public client with PKCE) or `private_key_jwt` with public keys in `jwks` / `jwks_uri`.",
+                "markdown": "The document is public. Draft-02 §4.1 forbids client_secret, client_secret_expires_at and every shared-secret authentication method: a secret published at a URL is not a secret.\n\n**Remediation:** Remove the secret and rotate it now. Use `none` (public client with PKCE) or `private_key_jwt` with public keys in `jwks` / `jwks_uri`.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "9.5",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD55",
+              "name": "PrivateKeyMaterialInTheDocument",
+              "shortDescription": {
+                "text": "Private key material in the document"
+              },
+              "fullDescription": {
+                "text": "Only public keys may be published. JWK members d, p, q, dp, dq, qi, oth (RSA/EC private parts) or k (symmetric) expose the key that authenticates the client."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd55/",
+              "help": {
+                "text": "Only public keys may be published. JWK members d, p, q, dp, dq, qi, oth (RSA/EC private parts) or k (symmetric) expose the key that authenticates the client.\n\nRemediation: Publish only public JWKs; rotate the exposed key immediately.",
+                "markdown": "Only public keys may be published. JWK members d, p, q, dp, dq, qi, oth (RSA/EC private parts) or k (symmetric) expose the key that authenticates the client.\n\n**Remediation:** Publish only public JWKs; rotate the exposed key immediately.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "9.5",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD56",
+              "name": "AuthenticationMethodInconsistentWithKeyMaterial",
+              "shortDescription": {
+                "text": "Authentication method inconsistent with key material"
+              },
+              "fullDescription": {
+                "text": "private_key_jwt needs public keys (jwks or jwks_uri) for the authorization server to verify assertions; RFC 7591 forbids sending both jwks and jwks_uri; keys published by a public client are unused and confusing."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd56/",
+              "help": {
+                "text": "private_key_jwt needs public keys (jwks or jwks_uri) for the authorization server to verify assertions; RFC 7591 forbids sending both jwks and jwks_uri; keys published by a public client are unused and confusing.\n\nRemediation: For `private_key_jwt`, publish exactly one of `jwks` or `jwks_uri` (https). For a public client, use `none` and drop the keys.",
+                "markdown": "private_key_jwt needs public keys (jwks or jwks_uri) for the authorization server to verify assertions; RFC 7591 forbids sending both jwks and jwks_uri; keys published by a public client are unused and confusing.\n\n**Remediation:** For `private_key_jwt`, publish exactly one of `jwks` or `jwks_uri` (https). For a public client, use `none` and drop the keys.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)\n- [RFC 7591 Dynamic Client Registration](https://www.rfc-editor.org/rfc/rfc7591)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD57",
+              "name": "DocumentNotServedTheWayAuthorizationServersFetchIt",
+              "shortDescription": {
+                "text": "Document not served the way authorization servers fetch it"
+              },
+              "fullDescription": {
+                "text": "Authorization servers MUST treat any status other than 200 as an error, MUST NOT follow redirects, SHOULD cap the size (about 5 KB) and expect JSON. A document that only works through a redirect or is too large fails in production."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd57/",
+              "help": {
+                "text": "Authorization servers MUST treat any status other than 200 as an error, MUST NOT follow redirects, SHOULD cap the size (about 5 KB) and expect JSON. A document that only works through a redirect or is too large fails in production.\n\nRemediation: Serve the document directly (200, no redirect) as `application/json`, under 5 KB, with sensible `Cache-Control`.",
+                "markdown": "Authorization servers MUST treat any status other than 200 as an error, MUST NOT follow redirects, SHOULD cap the size (about 5 KB) and expect JSON. A document that only works through a redirect or is too large fails in production.\n\n**Remediation:** Serve the document directly (200, no redirect) as `application/json`, under 5 KB, with sensible `Cache-Control`.\n\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
               "id": "MCPP-PIN01",
               "name": "ToolSurfaceItemAddedSinceTheBaseline",
               "shortDescription": {
@@ -2083,7 +2331,7 @@
         },
         {
           "ruleId": "MCPP-TRN05",
-          "ruleIndex": 52,
+          "ruleIndex": 60,
           "level": "note",
           "message": {
             "text": "No Strict-Transport-Security header on 5 HTTPS response(s). [https://mcp.test/mcp]"
@@ -2130,7 +2378,7 @@
         },
         {
           "ruleId": "MCPP-TRN10",
-          "ruleIndex": 57,
+          "ruleIndex": 65,
           "level": "note",
           "message": {
             "text": "https://mcp.test/.well-known/oauth-protected-resource/mcp: missing X-Content-Type-Options: nosniff. [https://mcp.test/mcp]"

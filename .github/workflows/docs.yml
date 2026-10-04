@@ -1,0 +1,42 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked --group docs
+      - run: uv run mkdocs build --strict --site-dir site
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name == 'push' && vars.DEPLOY_DOCS == 'true'
+        with:
+          path: site
+
+  # Publishing is opt-in: set the repository variable DEPLOY_DOCS=true and enable
+  # GitHub Pages (source: GitHub Actions) to deploy on every push to main.
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && vars.DEPLOY_DOCS == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

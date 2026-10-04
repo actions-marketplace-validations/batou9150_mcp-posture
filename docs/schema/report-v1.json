@@ -366,7 +366,8 @@
     "mode": {
       "enum": [
         "passive",
-        "active"
+        "active",
+        "lint"
       ],
       "title": "Mode",
       "type": "string"

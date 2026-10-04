@@ -1,0 +1,61 @@
+site_name: mcp-posture
+site_description: Security posture scanner for remote MCP servers
+site_url: https://batou9150.github.io/mcp-posture/
+repo_url: https://github.com/batou9150/mcp-posture
+repo_name: batou9150/mcp-posture
+copyright: Copyright &copy; 2026 Baptiste PIRAULT, MIT License
+strict: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/gen_checks.py
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Configuration: configuration.md
+  - CI integration: ci.md
+  - Client metadata lint: cimd-lint.md
+  - Checks: checks/index.md
+  - Report formats: formats.md
+  - Threat model: threat-model.md
+  - Spec notes: spec-notes.md
+
+exclude_docs: |
+  gen_checks.py

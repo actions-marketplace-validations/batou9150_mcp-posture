@@ -89,7 +89,7 @@ class Reference(_Frozen):
     url: str
 
 
-CheckMode = Literal["passive", "active"]
+CheckMode = Literal["passive", "active", "lint"]
 
 
 class CheckMeta(_Frozen):
