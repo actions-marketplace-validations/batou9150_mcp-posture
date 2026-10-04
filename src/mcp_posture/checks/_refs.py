@@ -71,3 +71,15 @@ OWASP_ERROR_HANDLING = (
     "OWASP Error Handling Cheat Sheet",
     "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html",
 )
+OWASP_MCP_TOP10 = ("OWASP MCP Top 10", "https://owasp.org/www-project-mcp-top-10/")
+UNICODE_TR36 = ("Unicode TR #36 Security Considerations", "https://www.unicode.org/reports/tr36/")
+UNICODE_TR39 = ("Unicode TR #39 Security Mechanisms", "https://www.unicode.org/reports/tr39/")
+CVE_TROJAN_SOURCE = ("Trojan Source (CVE-2021-42574)", "https://trojansource.codes/")
+MCP_TOOLS_ANNOTATIONS = (
+    "MCP 2025-11-25 Tools (annotations)",
+    f"{_MCP}/2025-11-25/server/tools",
+)
+RFC6749_3_3 = (
+    "RFC 6749 §3.3 Access Token Scope",
+    "https://www.rfc-editor.org/rfc/rfc6749#section-3.3",
+)

@@ -1,12 +1,13 @@
-"""Scan orchestration: collect once per target, freeze the context, run every applicable check."""
+"""Scan orchestration: collect every target, freeze contexts, then run every applicable check."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime
+from types import MappingProxyType
 from urllib.parse import urlsplit
 
 import httpx
@@ -27,7 +28,9 @@ from mcp_posture.models import (
     ToolInfo,
 )
 from mcp_posture.net import Fetcher, HttpExchange, NetSettings, TlsProbe, probe_tls
+from mcp_posture.pin import Lock
 from mcp_posture.registry import ERROR_CHECK_ID, RegisteredCheck, load_all
+from mcp_posture.suppress import Suppression, apply_suppressions
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +53,8 @@ class ScanOptions:
     tls_probe: bool = True
     transport_factory: TransportFactory | None = None
     post_process: Callable[[ScanContext, list[Finding]], list[Finding]] | None = None
+    baseline: Lock | None = None
+    suppressions: tuple[Suppression, ...] = ()
 
 
 def map_revision(version: str | None) -> SpecRevision | None:
@@ -183,7 +188,14 @@ def _tls_origins(url: str, auth: AuthDiscovery) -> list[tuple[str, int]]:
     return out[:MAX_TLS_ORIGINS]
 
 
-async def scan_target(target: Target, options: ScanOptions) -> TargetResult:
+@dataclass(frozen=True)
+class Collected:
+    target: Target
+    ctx: ScanContext | None
+    error: str | None
+
+
+async def collect_target(target: Target, options: ScanOptions) -> Collected:
     transport = options.transport_factory() if options.transport_factory else None
     async with Fetcher(options.net, transport=transport) as fetcher:
         try:
@@ -191,21 +203,47 @@ async def scan_target(target: Target, options: ScanOptions) -> TargetResult:
         except Exception as e:  # collection bugs surface as an unreachable target, not a crash
             log.exception("collection failed for %s", target.url)
             ctx, error = None, f"internal error during collection: {type(e).__name__}: {e}"
+    return Collected(target, ctx, error)
+
+
+async def collect_all(targets: Iterable[Target], options: ScanOptions) -> list[Collected]:
+    sem = asyncio.Semaphore(max(1, options.concurrency))
+
+    async def bounded(t: Target) -> Collected:
+        async with sem:
+            return await collect_target(t, options)
+
+    unique = list({t.url: t for t in targets}.values())
+    return list(await asyncio.gather(*(bounded(t) for t in unique)))
+
+
+def evaluate(
+    collected: Collected,
+    options: ScanOptions,
+    *,
+    peers: tuple[tuple[str, str, str], ...] = (),
+    today: date | None = None,
+) -> TargetResult:
+    target, ctx = collected.target, collected.ctx
     if ctx is None:
         return TargetResult(
             target=target.url,
             name=target.name,
             source=target.source,
             reachable=False,
-            error=error,
+            error=collected.error,
             spec_revision=options.spec or SpecRevision.latest(),
             revision_source="pinned" if options.spec else "default",
         )
+    ctx = replace(
+        ctx, extras=MappingProxyType({**ctx.extras, "peers": peers, "baseline": options.baseline})
+    )
     findings, not_applicable = run_checks(ctx, select_checks(options))
     if options.post_process is not None:
         findings = options.post_process(ctx, findings)
     # A fingerprint identifies a finding across runs; keep the first if a check repeats one.
     findings = list({f.fingerprint: f for f in reversed(findings)}.values())
+    findings = apply_suppressions(findings, options.suppressions, today or date.today())
     findings.sort(key=Finding.sort_key)
     return TargetResult(
         target=target.url,
@@ -221,17 +259,29 @@ async def scan_target(target: Target, options: ScanOptions) -> TargetResult:
     )
 
 
+def surface_peers(collected: Iterable[Collected]) -> tuple[tuple[str, str, str], ...]:
+    return tuple(
+        (c.target.url, item.kind, item.name)
+        for c in collected
+        if c.ctx is not None
+        for item in c.ctx.mcp.surface
+    )
+
+
+async def scan_target(target: Target, options: ScanOptions) -> TargetResult:
+    return evaluate(await collect_target(target, options), options)
+
+
 async def scan(
-    targets: Iterable[Target], options: ScanOptions, *, generated_at: datetime | None = None
+    targets: Iterable[Target],
+    options: ScanOptions,
+    *,
+    generated_at: datetime | None = None,
+    today: date | None = None,
 ) -> Report:
-    sem = asyncio.Semaphore(max(1, options.concurrency))
-
-    async def bounded(t: Target) -> TargetResult:
-        async with sem:
-            return await scan_target(t, options)
-
-    unique = list({t.url: t for t in targets}.values())
-    results = await asyncio.gather(*(bounded(t) for t in unique))
+    collected = await collect_all(targets, options)
+    peers = surface_peers(collected)
+    results = [evaluate(c, options, peers=peers, today=today) for c in collected]
     mode: CheckMode = "active" if options.active else "passive"
     return Report(
         tool=ToolInfo(version=__version__),

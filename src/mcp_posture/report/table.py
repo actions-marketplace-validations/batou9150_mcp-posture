@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from mcp_posture.heuristics import visible as safe
 from mcp_posture.models import Report, Severity
 
 SEVERITY_STYLE = {
@@ -23,12 +24,12 @@ def render(report: Report, *, color: bool = False, width: int = 120) -> str:
     buf = StringIO()
     console = Console(file=buf, force_terminal=color, no_color=not color, width=width)
     for t in report.targets:
-        header = Text(t.target, style="bold")
+        header = Text(safe(t.target), style="bold")
         if t.name:
-            header.append(f"  ({t.name})", style="dim")
+            header.append(f"  ({safe(t.name)})", style="dim")
         console.print(header)
         if not t.reachable:
-            console.print(Text(f"  unreachable: {t.error}", style="red"))
+            console.print(Text(f"  unreachable: {safe(t.error or '')}", style="red"))
             console.print()
             continue
         transport = t.transport
@@ -54,7 +55,7 @@ def render(report: Report, *, color: bool = False, width: int = 120) -> str:
             table.add_row(
                 Text(f.severity.value, style=SEVERITY_STYLE[f.severity]),
                 f.check_id,
-                Text(f"{f.title}\n", style="bold") + Text(f.message),
+                Text(f"{f.title}\n", style="bold") + Text(safe(f.message)),
             )
         console.print(table)
         suppressed = sum(1 for f in t.findings if f.suppressed)

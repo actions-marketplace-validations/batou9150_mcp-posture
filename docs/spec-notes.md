@@ -4,7 +4,7 @@ Research notes behind the check catalogue. Each normative statement that a remot
 scanner can observe is mapped to a check ID. Statements a scanner cannot observe are marked
 **N/O** (not observable) with the reason, so the gaps are explicit.
 
-Sources were fetched on 2026-10-04. Check IDs marked *(M2)* / *(M3)* land in later milestones.
+Sources were fetched on 2026-10-04. Check IDs marked *(M3)* land in the next milestone (active checks).
 
 ## MCP specification revisions
 
@@ -43,7 +43,7 @@ the server requires authentication and no token is supplied. `--spec` pins it ex
 | `WWW-Authenticate: Bearer` on 401 | RFC 6750 §3, MCP | all (MUST 2025-06-18) | MCPP-AUTHN02 |
 | `resource_metadata` in the challenge, or well-known PRM | RFC 9728 §5.1, MCP | 2025-06-18 (challenge MUST), 2025-11-25+ (one of two) | MCPP-AUTHN03 |
 | No `error` attribute without credentials (SHOULD NOT) | RFC 6750 §3.1 | all | MCPP-AUTHN05 |
-| `scope` in the challenge (SHOULD) | MCP | 2025-11-25+ | MCPP-SCP02 *(M2)* |
+| `scope` in the challenge (SHOULD) | MCP | 2025-11-25+ | MCPP-SCP02 |
 | PRM MUST be implemented | RFC 9728, MCP | 2025-06-18+ | MCPP-PRM01 |
 | PRM: 200, `application/json`, zero-valued params omitted | RFC 9728 §3.2 | 2025-06-18+ | MCPP-PRM02 |
 | PRM `resource` identical to the requested URL | RFC 9728 §3.3 | 2025-06-18+ | MCPP-PRM03 |
@@ -109,7 +109,7 @@ MCP 2025-11-25 and 2026-07-28 still cite draft-00. The latest IETF draft is
 ## Tool surface
 
 Not normative in the spec beyond the Security Best Practices and the tool annotations schema;
-TOOL and PIN checks *(M2)* are heuristics with explicit confidence levels.
+TOOL and PIN checks are heuristics with explicit confidence levels.
 
 ## Existing scanners (survey, 2026-10-04)
 

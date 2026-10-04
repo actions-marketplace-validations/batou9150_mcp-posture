@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlsplit
 
-from mcp_posture.context import AuthServerInfo, FrozenJson, ScanContext
+from mcp_posture.context import AuthServerInfo, FrozenJson, ScanContext, thaw
+from mcp_posture.models import Evidence
 from mcp_posture.net import is_loopback_host
 
 
@@ -39,3 +41,20 @@ def auth_servers(ctx: ScanContext) -> Iterator[tuple[AuthServerInfo, FrozenJson]
 def same_origin(a: str, b: str) -> bool:
     pa, pb = urlsplit(a), urlsplit(b)
     return (pa.scheme, pa.hostname, pa.port) == (pb.scheme, pb.hostname, pb.port)
+
+
+def field_evidence(server: AuthServerInfo, field: str) -> list[Evidence]:
+    """The metadata field as served, so findings can be verified without re-fetching."""
+    fetch = server.metadata
+    if fetch is None or fetch.document is None:
+        return []
+    value = thaw(fetch.document.get(field, "<absent>"))
+    excerpt = json.dumps(value, ensure_ascii=False) if value != "<absent>" else "absent"
+    return [
+        Evidence(
+            summary=field,
+            request=fetch.exchange.describe(),
+            status=fetch.exchange.status,
+            excerpt=excerpt[:300],
+        )
+    ]

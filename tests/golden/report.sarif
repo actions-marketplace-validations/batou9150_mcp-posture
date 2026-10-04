@@ -1,0 +1,2255 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "mcp-posture",
+          "version": "0.0.0-test",
+          "semanticVersion": "0.0.0-test",
+          "informationUri": "https://github.com/batou9150/mcp-posture",
+          "rules": [
+            {
+              "id": "MCPP-ASM01",
+              "name": "AuthorizationServerMetadataNotFound",
+              "shortDescription": {
+                "text": "Authorization server metadata not found"
+              },
+              "fullDescription": {
+                "text": "MCP authorization servers MUST publish RFC 8414 metadata (or, since 2025-11-25, OpenID Connect Discovery). Clients cannot learn the endpoints or verify PKCE support otherwise."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm01/",
+              "help": {
+                "text": "MCP authorization servers MUST publish RFC 8414 metadata (or, since 2025-11-25, OpenID Connect Discovery). Clients cannot learn the endpoints or verify PKCE support otherwise.\n\nRemediation: Publish `/.well-known/oauth-authorization-server` (path-inserted for issuers with a path) or `/.well-known/openid-configuration`.",
+                "markdown": "MCP authorization servers MUST publish RFC 8414 metadata (or, since 2025-11-25, OpenID Connect Discovery). Clients cannot learn the endpoints or verify PKCE support otherwise.\n\n**Remediation:** Publish `/.well-known/oauth-authorization-server` (path-inserted for issuers with a path) or `/.well-known/openid-configuration`.\n\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)\n- [OpenID Connect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM02",
+              "name": "IssuerMismatch",
+              "shortDescription": {
+                "text": "Issuer mismatch"
+              },
+              "fullDescription": {
+                "text": "The `issuer` in the metadata MUST be identical to the issuer used to build the well-known URL; otherwise the metadata MUST NOT be used. A mismatch is the classic authorization-server impersonation / mix-up setup."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm02/",
+              "help": {
+                "text": "The `issuer` in the metadata MUST be identical to the issuer used to build the well-known URL; otherwise the metadata MUST NOT be used. A mismatch is the classic authorization-server impersonation / mix-up setup.\n\nRemediation: Make `issuer` exactly equal to the value listed in `authorization_servers` (same scheme, host, port, path, trailing slash), https, without query or fragment.",
+                "markdown": "The `issuer` in the metadata MUST be identical to the issuer used to build the well-known URL; otherwise the metadata MUST NOT be used. A mismatch is the classic authorization-server impersonation / mix-up setup.\n\n**Remediation:** Make `issuer` exactly equal to the value listed in `authorization_servers` (same scheme, host, port, path, trailing slash), https, without query or fragment.\n\n- [RFC 8414 §3.3 Metadata Validation](https://www.rfc-editor.org/rfc/rfc8414#section-3.3)\n- [OpenID Connect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html)\n- [MCP 2026-07-28 Authorization Server Discovery](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/authorization-server-discovery)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM03",
+              "name": "AuthorizationServerEndpointNotHttps",
+              "shortDescription": {
+                "text": "Authorization server endpoint not HTTPS"
+              },
+              "fullDescription": {
+                "text": "All authorization server endpoints MUST be served over HTTPS (MCP authorization, communication security). Codes, tokens and client credentials would otherwise travel in clear text."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm03/",
+              "help": {
+                "text": "All authorization server endpoints MUST be served over HTTPS (MCP authorization, communication security). Codes, tokens and client credentials would otherwise travel in clear text.\n\nRemediation: Publish only `https://` endpoint URLs.",
+                "markdown": "All authorization server endpoints MUST be served over HTTPS (MCP authorization, communication security). Codes, tokens and client credentials would otherwise travel in clear text.\n\n**Remediation:** Publish only `https://` endpoint URLs.\n\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM04",
+              "name": "PkceS256NotAdvertised",
+              "shortDescription": {
+                "text": "PKCE S256 not advertised"
+              },
+              "fullDescription": {
+                "text": "PKCE is mandatory for MCP clients, and since 2025-11-25 clients MUST refuse to proceed when `code_challenge_methods_supported` is absent. Without S256, authorization codes can be intercepted and redeemed by an attacker."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm04/",
+              "help": {
+                "text": "PKCE is mandatory for MCP clients, and since 2025-11-25 clients MUST refuse to proceed when `code_challenge_methods_supported` is absent. Without S256, authorization codes can be intercepted and redeemed by an attacker.\n\nRemediation: Enforce PKCE and advertise `\"code_challenge_methods_supported\": [\"S256\"]`.",
+                "markdown": "PKCE is mandatory for MCP clients, and since 2025-11-25 clients MUST refuse to proceed when `code_challenge_methods_supported` is absent. Without S256, authorization codes can be intercepted and redeemed by an attacker.\n\n**Remediation:** Enforce PKCE and advertise `\"code_challenge_methods_supported\": [\"S256\"]`.\n\n- [RFC 7636 PKCE](https://www.rfc-editor.org/rfc/rfc7636)\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)\n- [RFC 9700 OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "9.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM05",
+              "name": "PkcePlainMethodAllowed",
+              "shortDescription": {
+                "text": "PKCE plain method allowed"
+              },
+              "fullDescription": {
+                "text": "The `plain` transformation sends the verifier in the authorization request, which defeats PKCE against an attacker who can read it, and allows downgrade. OAuth 2.1 prohibits it."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm05/",
+              "help": {
+                "text": "The `plain` transformation sends the verifier in the authorization request, which defeats PKCE against an attacker who can read it, and allows downgrade. OAuth 2.1 prohibits it.\n\nRemediation: Advertise and accept only `S256`.",
+                "markdown": "The `plain` transformation sends the verifier in the authorization request, which defeats PKCE against an attacker who can read it, and allows downgrade. OAuth 2.1 prohibits it.\n\n**Remediation:** Advertise and accept only `S256`.\n\n- [RFC 7636 PKCE](https://www.rfc-editor.org/rfc/rfc7636)\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)\n- [RFC 9700 OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM06",
+              "name": "DeprecatedGrantTypesEnabled",
+              "shortDescription": {
+                "text": "Deprecated grant types enabled"
+              },
+              "fullDescription": {
+                "text": "OAuth 2.1 removes the implicit and resource owner password grants; RFC 9700 says the password grant MUST NOT be used. When `grant_types_supported` is omitted, RFC 8414 defaults it to authorization_code and implicit."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm06/",
+              "help": {
+                "text": "OAuth 2.1 removes the implicit and resource owner password grants; RFC 9700 says the password grant MUST NOT be used. When `grant_types_supported` is omitted, RFC 8414 defaults it to authorization_code and implicit.\n\nRemediation: Disable implicit and password grants and list the supported grants explicitly, e.g. `[\"authorization_code\", \"refresh_token\"]`.",
+                "markdown": "OAuth 2.1 removes the implicit and resource owner password grants; RFC 9700 says the password grant MUST NOT be used. When `grant_types_supported` is omitted, RFC 8414 defaults it to authorization_code and implicit.\n\n**Remediation:** Disable implicit and password grants and list the supported grants explicitly, e.g. `[\"authorization_code\", \"refresh_token\"]`.\n\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)\n- [RFC 9700 OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700)\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM07",
+              "name": "ResponseTypesIncompatibleWithOauth",
+              "shortDescription": {
+                "text": "Response types incompatible with OAuth 2.1"
+              },
+              "fullDescription": {
+                "text": "MCP uses the authorization code flow, so `code` must be supported; response types returning an access token from the authorization endpoint (`token`) are the implicit flow, removed in OAuth 2.1."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm07/",
+              "help": {
+                "text": "MCP uses the authorization code flow, so `code` must be supported; response types returning an access token from the authorization endpoint (`token`) are the implicit flow, removed in OAuth 2.1.\n\nRemediation: Support `code`; remove response types containing `token`.",
+                "markdown": "MCP uses the authorization code flow, so `code` must be supported; response types returning an access token from the authorization endpoint (`token`) are the implicit flow, removed in OAuth 2.1.\n\n**Remediation:** Support `code`; remove response types containing `token`.\n\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM08",
+              "name": "ResourceIndicatorEnforcementNotVerified",
+              "shortDescription": {
+                "text": "Resource indicator (RFC 8707) enforcement not verified"
+              },
+              "fullDescription": {
+                "text": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm08/",
+              "help": {
+                "text": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it.\n\nRemediation: Ensure the authorization server honors `resource` and sets `aud`, and that the MCP server rejects tokens for other audiences. Run `--active` (ACT06, ACT03) to verify.",
+                "markdown": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it.\n\n**Remediation:** Ensure the authorization server honors `resource` and sets `aud`, and that the MCP server rejects tokens for other audiences. Run `--active` (ACT06, ACT03) to verify.\n\n- [RFC 8707 Resource Indicators](https://www.rfc-editor.org/rfc/rfc8707)\n- [MCP 2025-06-18 Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "low",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM09",
+              "name": "DynamicClientRegistrationEndpointExposed",
+              "shortDescription": {
+                "text": "Dynamic Client Registration endpoint exposed"
+              },
+              "fullDescription": {
+                "text": "Anonymous DCR lets anyone create clients (with arbitrary names, logos and redirect URIs) that users will see on consent screens. It is allowed but worth knowing, especially since 2026-07-28 deprecates DCR for MCP."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm09/",
+              "help": {
+                "text": "Anonymous DCR lets anyone create clients (with arbitrary names, logos and redirect URIs) that users will see on consent screens. It is allowed but worth knowing, especially since 2026-07-28 deprecates DCR for MCP.\n\nRemediation: If DCR is not needed, disable it. Otherwise rate-limit it, require an initial access token where possible, and show the redirect hostname on consent.",
+                "markdown": "Anonymous DCR lets anyone create clients (with arbitrary names, logos and redirect URIs) that users will see on consent screens. It is allowed but worth knowing, especially since 2026-07-28 deprecates DCR for MCP.\n\n**Remediation:** If DCR is not needed, disable it. Otherwise rate-limit it, require an initial access token where possible, and show the redirect hostname on consent.\n\n- [RFC 7591 Dynamic Client Registration](https://www.rfc-editor.org/rfc/rfc7591)\n- [MCP 2026-07-28 Client Registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM10",
+              "name": "DynamicClientRegistrationWithoutClientIdMetadataDocuments",
+              "shortDescription": {
+                "text": "Dynamic Client Registration without Client ID Metadata Documents"
+              },
+              "fullDescription": {
+                "text": "Since 2025-11-25, CIMD is the recommended registration path (SHOULD) and DCR is optional; 2026-07-28 deprecates DCR. An AS offering only DCR keeps the open registration surface and gives clients no verifiable identity."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm10/",
+              "help": {
+                "text": "Since 2025-11-25, CIMD is the recommended registration path (SHOULD) and DCR is optional; 2026-07-28 deprecates DCR. An AS offering only DCR keeps the open registration surface and gives clients no verifiable identity.\n\nRemediation: Enable Client ID Metadata Document support and advertise `client_id_metadata_document_supported: true`.",
+                "markdown": "Since 2025-11-25, CIMD is the recommended registration path (SHOULD) and DCR is optional; 2026-07-28 deprecates DCR. An AS offering only DCR keeps the open registration surface and gives clients no verifiable identity.\n\n**Remediation:** Enable Client ID Metadata Document support and advertise `client_id_metadata_document_supported: true`.\n\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [MCP 2026-07-28 Client Registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM11",
+              "name": "AuthorizationResponseIssParameterNotSupported",
+              "shortDescription": {
+                "text": "Authorization response iss parameter not supported"
+              },
+              "fullDescription": {
+                "text": "RFC 9207 `iss` in authorization responses is the standard defence against mix-up attacks (RFC 9700 §2.1). 2026-07-28 makes it a SHOULD; it matters most when a resource lists several authorization servers."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm11/",
+              "help": {
+                "text": "RFC 9207 `iss` in authorization responses is the standard defence against mix-up attacks (RFC 9700 §2.1). 2026-07-28 makes it a SHOULD; it matters most when a resource lists several authorization servers.\n\nRemediation: Return `iss` in authorization responses and advertise `authorization_response_iss_parameter_supported: true`.",
+                "markdown": "RFC 9207 `iss` in authorization responses is the standard defence against mix-up attacks (RFC 9700 §2.1). 2026-07-28 makes it a SHOULD; it matters most when a resource lists several authorization servers.\n\n**Remediation:** Return `iss` in authorization responses and advertise `authorization_response_iss_parameter_supported: true`.\n\n- [RFC 9207 Issuer Identification](https://www.rfc-editor.org/rfc/rfc9207)\n- [RFC 9700 OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700)\n- [MCP 2026-07-28 Authorization Security Considerations](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/security-considerations)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM12",
+              "name": "UnsignedClientAuthenticationAllowed",
+              "shortDescription": {
+                "text": "Unsigned (alg=none) client authentication allowed"
+              },
+              "fullDescription": {
+                "text": "RFC 8414 §2: the value `none` MUST NOT be used in the signing algorithm lists for endpoint authentication; it would accept unsigned client assertions."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm12/",
+              "help": {
+                "text": "RFC 8414 §2: the value `none` MUST NOT be used in the signing algorithm lists for endpoint authentication; it would accept unsigned client assertions.\n\nRemediation: Remove `none` from the *_auth_signing_alg_values_supported lists.",
+                "markdown": "RFC 8414 §2: the value `none` MUST NOT be used in the signing algorithm lists for endpoint authentication; it would accept unsigned client assertions.\n\n**Remediation:** Remove `none` from the *_auth_signing_alg_values_supported lists.\n\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ASM13",
+              "name": "DefaultAuthorizationEndpointsWithoutMetadata03",
+              "shortDescription": {
+                "text": "Default authorization endpoints without metadata (2025-03-26)"
+              },
+              "fullDescription": {
+                "text": "In 2025-03-26 the MCP server is its own authorization server; without RFC 8414 metadata, clients guess `/authorize`, `/token` and `/register` and cannot verify PKCE support or endpoint policy."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm13/",
+              "help": {
+                "text": "In 2025-03-26 the MCP server is its own authorization server; without RFC 8414 metadata, clients guess `/authorize`, `/token` and `/register` and cannot verify PKCE support or endpoint policy.\n\nRemediation: Publish `/.well-known/oauth-authorization-server` at the server origin, or move to the 2025-06-18+ model with a separate authorization server and PRM.",
+                "markdown": "In 2025-03-26 the MCP server is its own authorization server; without RFC 8414 metadata, clients guess `/authorize`, `/token` and `/register` and cannot verify PKCE support or endpoint policy.\n\n**Remediation:** Publish `/.well-known/oauth-authorization-server` at the server origin, or move to the 2025-06-18+ model with a separate authorization server and PRM.\n\n- [MCP 2025-03-26 Authorization](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization)\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "asm"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-AUTHN01",
+              "name": "McpToolsListedWithoutAuthentication",
+              "shortDescription": {
+                "text": "MCP tools listed without authentication"
+              },
+              "fullDescription": {
+                "text": "Anyone who can reach the endpoint can enumerate (and likely call) the server's tools. Some servers are public on purpose, hence medium confidence; for anything that touches user or company data this is an authentication bypass."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-authn01/",
+              "help": {
+                "text": "Anyone who can reach the endpoint can enumerate (and likely call) the server's tools. Some servers are public on purpose, hence medium confidence; for anything that touches user or company data this is an authentication bypass.\n\nRemediation: Require an OAuth access token on every MCP request (return 401 with a `WWW-Authenticate: Bearer [REDACTED]` challenge), or document the server as intentionally public and suppress this finding with a justification.",
+                "markdown": "Anyone who can reach the endpoint can enumerate (and likely call) the server's tools. Some servers are public on purpose, hence medium confidence; for anything that touches user or company data this is an authentication bypass.\n\n**Remediation:** Require an OAuth access token on every MCP request (return 401 with a `WWW-Authenticate: Bearer [REDACTED]` challenge), or document the server as intentionally public and suppress this finding with a justification.\n\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "authn"
+                ],
+                "precision": "medium",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-AUTHN02",
+              "name": "401WithoutABearerChallenge",
+              "shortDescription": {
+                "text": "401 without a Bearer challenge"
+              },
+              "fullDescription": {
+                "text": "RFC 6750 §3 requires a `WWW-Authenticate: Bearer` header on 401 responses. Without it, MCP clients cannot discover where to obtain a token and the authorization flow never starts."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-authn02/",
+              "help": {
+                "text": "RFC 6750 §3 requires a `WWW-Authenticate: Bearer` header on 401 responses. Without it, MCP clients cannot discover where to obtain a token and the authorization flow never starts.\n\nRemediation: Return `WWW-Authenticate: Bearer [REDACTED]\"<PRM URL>\", scope=\"<scopes>\"` on every 401.",
+                "markdown": "RFC 6750 §3 requires a `WWW-Authenticate: Bearer` header on 401 responses. Without it, MCP clients cannot discover where to obtain a token and the authorization flow never starts.\n\n**Remediation:** Return `WWW-Authenticate: Bearer [REDACTED]\"<PRM URL>\", scope=\"<scopes>\"` on every 401.\n\n- [RFC 6750 Bearer Token Usage](https://www.rfc-editor.org/rfc/rfc6750)\n- [MCP 2025-06-18 Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)\n- [RFC 9728 §5.1 WWW-Authenticate resource_metadata](https://www.rfc-editor.org/rfc/rfc9728#section-5.1)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "authn"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-AUTHN03",
+              "name": "NoWayToDiscoverProtectedResourceMetadata",
+              "shortDescription": {
+                "text": "No way to discover Protected Resource Metadata"
+              },
+              "fullDescription": {
+                "text": "MCP servers MUST advertise their PRM, through `resource_metadata` in the 401 challenge (mandatory in 2025-06-18) or a well-known URL (allowed since 2025-11-25). Without it, clients cannot find the authorization server."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-authn03/",
+              "help": {
+                "text": "MCP servers MUST advertise their PRM, through `resource_metadata` in the 401 challenge (mandatory in 2025-06-18) or a well-known URL (allowed since 2025-11-25). Without it, clients cannot find the authorization server.\n\nRemediation: Add `resource_metadata=\"https://<host>/.well-known/oauth-protected-resource<path>\"` to the Bearer challenge and serve that document.",
+                "markdown": "MCP servers MUST advertise their PRM, through `resource_metadata` in the 401 challenge (mandatory in 2025-06-18) or a well-known URL (allowed since 2025-11-25). Without it, clients cannot find the authorization server.\n\n**Remediation:** Add `resource_metadata=\"https://<host>/.well-known/oauth-protected-resource<path>\"` to the Bearer challenge and serve that document.\n\n- [RFC 9728 §5.1 WWW-Authenticate resource_metadata](https://www.rfc-editor.org/rfc/rfc9728#section-5.1)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [MCP 2026-07-28 Authorization Server Discovery](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/authorization-server-discovery)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "authn"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-AUTHN04",
+              "name": "UrlNotHttpsOrOnAnotherOrigin",
+              "shortDescription": {
+                "text": "resource_metadata URL not HTTPS or on another origin"
+              },
+              "fullDescription": {
+                "text": "The PRM URL tells clients which authorization server to trust. Over plain HTTP it can be tampered with; on another origin it deserves a look, since the server delegates trust to a third party."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-authn04/",
+              "help": {
+                "text": "The PRM URL tells clients which authorization server to trust. Over plain HTTP it can be tampered with; on another origin it deserves a look, since the server delegates trust to a third party.\n\nRemediation: Serve the PRM over HTTPS, preferably from the MCP server's own origin.",
+                "markdown": "The PRM URL tells clients which authorization server to trust. Over plain HTTP it can be tampered with; on another origin it deserves a look, since the server delegates trust to a third party.\n\n**Remediation:** Serve the PRM over HTTPS, preferably from the MCP server's own origin.\n\n- [RFC 9728 §5.1 WWW-Authenticate resource_metadata](https://www.rfc-editor.org/rfc/rfc9728#section-5.1)\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "authn"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-AUTHN05",
+              "name": "ErrorCodeInAnUnauthenticatedChallenge",
+              "shortDescription": {
+                "text": "Error code in an unauthenticated challenge"
+              },
+              "fullDescription": {
+                "text": "RFC 6750 §3.1: when a request carries no authentication, the resource server SHOULD NOT include an error code. Doing so leaks validation details and confuses clients that treat `invalid_token` as a reason to drop credentials."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-authn05/",
+              "help": {
+                "text": "RFC 6750 §3.1: when a request carries no authentication, the resource server SHOULD NOT include an error code. Doing so leaks validation details and confuses clients that treat `invalid_token` as a reason to drop credentials.\n\nRemediation: Return a bare `Bearer` challenge (realm, resource_metadata, scope) when no token was sent; reserve `error=` for requests that included a token.",
+                "markdown": "RFC 6750 §3.1: when a request carries no authentication, the resource server SHOULD NOT include an error code. Doing so leaks validation details and confuses clients that treat `invalid_token` as a reason to drop credentials.\n\n**Remediation:** Return a bare `Bearer` challenge (realm, resource_metadata, scope) when no token was sent; reserve `error=` for requests that included a token.\n\n- [RFC 6750 §3.1 Error Codes](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "authn"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-AUTHN06",
+              "name": "ErrorResponsesLeakInternals",
+              "shortDescription": {
+                "text": "Error responses leak internals"
+              },
+              "fullDescription": {
+                "text": "Stack traces, debug pages, internal addresses and version banners help an attacker fingerprint the stack and find known vulnerabilities."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-authn06/",
+              "help": {
+                "text": "Stack traces, debug pages, internal addresses and version banners help an attacker fingerprint the stack and find known vulnerabilities.\n\nRemediation: Return generic error bodies (JSON-RPC error objects or RFC 6750 challenges) and log details server-side. Strip `Server` / `X-Powered-By` version banners at the proxy.",
+                "markdown": "Stack traces, debug pages, internal addresses and version banners help an attacker fingerprint the stack and find known vulnerabilities.\n\n**Remediation:** Return generic error bodies (JSON-RPC error objects or RFC 6750 challenges) and log details server-side. Strip `Server` / `X-Powered-By` version banners at the proxy.\n\n- [OWASP Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "authn"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD01",
+              "name": "ClientIdMetadataDocumentsNotAdvertised",
+              "shortDescription": {
+                "text": "Client ID Metadata Documents not advertised"
+              },
+              "fullDescription": {
+                "text": "Since 2025-11-25 authorization servers SHOULD support CIMD, and CIMD-capable servers MUST say so with `client_id_metadata_document_supported`. Without it, MCP clients fall back to DCR or manual pre-registration."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd01/",
+              "help": {
+                "text": "Since 2025-11-25 authorization servers SHOULD support CIMD, and CIMD-capable servers MUST say so with `client_id_metadata_document_supported`. Without it, MCP clients fall back to DCR or manual pre-registration.\n\nRemediation: Implement CIMD (fetch the client_id URL, validate per the draft's §4-§8) and advertise `client_id_metadata_document_supported: true`.",
+                "markdown": "Since 2025-11-25 authorization servers SHOULD support CIMD, and CIMD-capable servers MUST say so with `client_id_metadata_document_supported`. Without it, MCP clients fall back to DCR or manual pre-registration.\n\n**Remediation:** Implement CIMD (fetch the client_id URL, validate per the draft's §4-§8) and advertise `client_id_metadata_document_supported: true`.\n\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [MCP 2026-07-28 Client Registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)\n- [OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document-02)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-CIMD02",
+              "name": "ClientRegistrationStrategies",
+              "shortDescription": {
+                "text": "Client registration strategies"
+              },
+              "fullDescription": {
+                "text": "MCP clients try pre-registration, then CIMD, then DCR. Knowing which paths an authorization server offers explains how (and whether) arbitrary MCP clients can connect."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-cimd02/",
+              "help": {
+                "text": "MCP clients try pre-registration, then CIMD, then DCR. Knowing which paths an authorization server offers explains how (and whether) arbitrary MCP clients can connect.\n\nRemediation: Informational. Prefer CIMD; keep DCR only for backwards compatibility.",
+                "markdown": "MCP clients try pre-registration, then CIMD, then DCR. Knowing which paths an authorization server offers explains how (and whether) arbitrary MCP clients can connect.\n\n**Remediation:** Informational. Prefer CIMD; keep DCR only for backwards compatibility.\n\n- [MCP 2026-07-28 Client Registration](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "cimd"
+                ],
+                "precision": "high",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PIN01",
+              "name": "ToolSurfaceItemAddedSinceTheBaseline",
+              "shortDescription": {
+                "text": "Tool surface item added since the baseline"
+              },
+              "fullDescription": {
+                "text": "A new tool, prompt or resource appeared after the server was reviewed and pinned. New tools are exposed to the agent without any review."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-pin01/",
+              "help": {
+                "text": "A new tool, prompt or resource appeared after the server was reviewed and pinned. New tools are exposed to the agent without any review.\n\nRemediation: If the change is expected (you updated the server), review the diff and refresh the lock file with `mcp-posture pin`. If not, stop using the server: definitions that change after approval are how rug pulls work.",
+                "markdown": "A new tool, prompt or resource appeared after the server was reviewed and pinned. New tools are exposed to the agent without any review.\n\n**Remediation:** If the change is expected (you updated the server), review the diff and refresh the lock file with `mcp-posture pin`. If not, stop using the server: definitions that change after approval are how rug pulls work.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "pin"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PIN02",
+              "name": "ToolSurfaceItemRemovedSinceTheBaseline",
+              "shortDescription": {
+                "text": "Tool surface item removed since the baseline"
+              },
+              "fullDescription": {
+                "text": "A pinned item disappeared. Usually benign, but a removal paired with an addition can be a rename used to slip a different definition past review."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-pin02/",
+              "help": {
+                "text": "A pinned item disappeared. Usually benign, but a removal paired with an addition can be a rename used to slip a different definition past review.\n\nRemediation: If the change is expected (you updated the server), review the diff and refresh the lock file with `mcp-posture pin`. If not, stop using the server: definitions that change after approval are how rug pulls work.",
+                "markdown": "A pinned item disappeared. Usually benign, but a removal paired with an addition can be a rename used to slip a different definition past review.\n\n**Remediation:** If the change is expected (you updated the server), review the diff and refresh the lock file with `mcp-posture pin`. If not, stop using the server: definitions that change after approval are how rug pulls work.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "pin"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PIN03",
+              "name": "ToolDefinitionChangedSinceTheBaseline",
+              "shortDescription": {
+                "text": "Tool definition changed since the baseline (rug pull)"
+              },
+              "fullDescription": {
+                "text": "The description, schema or annotations of a pinned item changed. A server can pass review with a benign description and swap it later; the agent reads the new text on the next session without the user noticing."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-pin03/",
+              "help": {
+                "text": "The description, schema or annotations of a pinned item changed. A server can pass review with a benign description and swap it later; the agent reads the new text on the next session without the user noticing.\n\nRemediation: If the change is expected (you updated the server), review the diff and refresh the lock file with `mcp-posture pin`. If not, stop using the server: definitions that change after approval are how rug pulls work.",
+                "markdown": "The description, schema or annotations of a pinned item changed. A server can pass review with a benign description and swap it later; the agent reads the new text on the next session without the user noticing.\n\n**Remediation:** If the change is expected (you updated the server), review the diff and refresh the lock file with `mcp-posture pin`. If not, stop using the server: definitions that change after approval are how rug pulls work.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "pin"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PIN04",
+              "name": "TargetNotCoveredByTheBaseline",
+              "shortDescription": {
+                "text": "Target not covered by the baseline"
+              },
+              "fullDescription": {
+                "text": "A baseline was given but cannot be compared for this target: it is not pinned, or its tool surface could not be listed (authentication required and no token supplied)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-pin04/",
+              "help": {
+                "text": "A baseline was given but cannot be compared for this target: it is not pinned, or its tool surface could not be listed (authentication required and no token supplied).\n\nRemediation: Pin the target with `mcp-posture pin <url>`, or supply a token so the tool surface can be listed.",
+                "markdown": "A baseline was given but cannot be compared for this target: it is not pinned, or its tool surface could not be listed (authentication required and no token supplied).\n\n**Remediation:** Pin the target with `mcp-posture pin <url>`, or supply a token so the tool surface can be listed.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "pin"
+                ],
+                "precision": "high",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM01",
+              "name": "ProtectedResourceMetadataNotFound",
+              "shortDescription": {
+                "text": "Protected Resource Metadata not found"
+              },
+              "fullDescription": {
+                "text": "Since 2025-06-18, MCP servers that require authorization MUST implement RFC 9728 so clients can discover the authorization server. Without PRM, compliant clients cannot start the OAuth flow."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm01/",
+              "help": {
+                "text": "Since 2025-06-18, MCP servers that require authorization MUST implement RFC 9728 so clients can discover the authorization server. Without PRM, compliant clients cannot start the OAuth flow.\n\nRemediation: Serve a JSON document at `/.well-known/oauth-protected-resource<path>` containing at least `resource` (the exact MCP URL) and `authorization_servers`.",
+                "markdown": "Since 2025-06-18, MCP servers that require authorization MUST implement RFC 9728 so clients can discover the authorization server. Without PRM, compliant clients cannot start the OAuth flow.\n\n**Remediation:** Serve a JSON document at `/.well-known/oauth-protected-resource<path>` containing at least `resource` (the exact MCP URL) and `authorization_servers`.\n\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)\n- [MCP 2025-06-18 Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)\n- [MCP 2026-07-28 Authorization Server Discovery](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/authorization-server-discovery)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM02",
+              "name": "ProtectedResourceMetadataMalformed",
+              "shortDescription": {
+                "text": "Protected Resource Metadata malformed"
+              },
+              "fullDescription": {
+                "text": "RFC 9728 §3.2: a successful response MUST be 200 with an `application/json` JSON object, and parameters with zero values MUST be omitted. Clients reject anything else."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm02/",
+              "help": {
+                "text": "RFC 9728 §3.2: a successful response MUST be 200 with an `application/json` JSON object, and parameters with zero values MUST be omitted. Clients reject anything else.\n\nRemediation: Return `200 OK`, `Content-Type: application/json`, a JSON object, and omit empty arrays.",
+                "markdown": "RFC 9728 §3.2: a successful response MUST be 200 with an `application/json` JSON object, and parameters with zero values MUST be omitted. Clients reject anything else.\n\n**Remediation:** Return `200 OK`, `Content-Type: application/json`, a JSON object, and omit empty arrays.\n\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM03",
+              "name": "PrmResourceDoesNotMatchTheServerUrl",
+              "shortDescription": {
+                "text": "PRM resource does not match the server URL"
+              },
+              "fullDescription": {
+                "text": "RFC 9728 §3.3: `resource` MUST be identical (code point for code point) to the URL the client used, or the metadata MUST NOT be used. The same value is the RFC 8707 audience of issued tokens; a mismatch breaks clients or yields tokens with the wrong audience."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm03/",
+              "help": {
+                "text": "RFC 9728 §3.3: `resource` MUST be identical (code point for code point) to the URL the client used, or the metadata MUST NOT be used. The same value is the RFC 8707 audience of issued tokens; a mismatch breaks clients or yields tokens with the wrong audience.\n\nRemediation: Set `resource` to the exact public URL of the MCP endpoint (scheme, host, port, path; same trailing slash convention), and use it as the token audience.",
+                "markdown": "RFC 9728 §3.3: `resource` MUST be identical (code point for code point) to the URL the client used, or the metadata MUST NOT be used. The same value is the RFC 8707 audience of issued tokens; a mismatch breaks clients or yields tokens with the wrong audience.\n\n**Remediation:** Set `resource` to the exact public URL of the MCP endpoint (scheme, host, port, path; same trailing slash convention), and use it as the token audience.\n\n- [RFC 9728 §3.3 Metadata Validation](https://www.rfc-editor.org/rfc/rfc9728#section-3.3)\n- [RFC 8707 Resource Indicators](https://www.rfc-editor.org/rfc/rfc8707)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM04",
+              "name": "PrmListsNoAuthorizationServer",
+              "shortDescription": {
+                "text": "PRM lists no authorization server"
+              },
+              "fullDescription": {
+                "text": "The MCP spec requires PRM to include `authorization_servers` with at least one issuer; otherwise clients have nowhere to obtain a token."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm04/",
+              "help": {
+                "text": "The MCP spec requires PRM to include `authorization_servers` with at least one issuer; otherwise clients have nowhere to obtain a token.\n\nRemediation: Add `\"authorization_servers\": [\"https://<issuer>\"]`.",
+                "markdown": "The MCP spec requires PRM to include `authorization_servers` with at least one issuer; otherwise clients have nowhere to obtain a token.\n\n**Remediation:** Add `\"authorization_servers\": [\"https://<issuer>\"]`.\n\n- [MCP 2025-06-18 Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM05",
+              "name": "AuthorizationServerIssuerNotHttps",
+              "shortDescription": {
+                "text": "Authorization server issuer not HTTPS"
+              },
+              "fullDescription": {
+                "text": "Issuer identifiers MUST use https (RFC 8414 §2) and all authorization server endpoints MUST be served over HTTPS (MCP authorization, communication security)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm05/",
+              "help": {
+                "text": "Issuer identifiers MUST use https (RFC 8414 §2) and all authorization server endpoints MUST be served over HTTPS (MCP authorization, communication security).\n\nRemediation: List only `https://` issuers in `authorization_servers`.",
+                "markdown": "Issuer identifiers MUST use https (RFC 8414 §2) and all authorization server endpoints MUST be served over HTTPS (MCP authorization, communication security).\n\n**Remediation:** List only `https://` issuers in `authorization_servers`.\n\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM06",
+              "name": "BearerTokensAcceptedInTheQueryString",
+              "shortDescription": {
+                "text": "Bearer tokens accepted in the query string"
+              },
+              "fullDescription": {
+                "text": "Tokens in URLs leak into logs, proxies and Referer headers. OAuth 2.1 and the MCP spec forbid them; RFC 6750 §2.3 says the method SHOULD NOT be used."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm06/",
+              "help": {
+                "text": "Tokens in URLs leak into logs, proxies and Referer headers. OAuth 2.1 and the MCP spec forbid them; RFC 6750 §2.3 says the method SHOULD NOT be used.\n\nRemediation: Remove `query` from `bearer_methods_supported` and ignore `access_token` query parameters on the resource server.",
+                "markdown": "Tokens in URLs leak into logs, proxies and Referer headers. OAuth 2.1 and the MCP spec forbid them; RFC 6750 §2.3 says the method SHOULD NOT be used.\n\n**Remediation:** Remove `query` from `bearer_methods_supported` and ignore `access_token` query parameters on the resource server.\n\n- [RFC 6750 Bearer Token Usage](https://www.rfc-editor.org/rfc/rfc6750)\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)\n- [MCP 2025-03-26 Authorization](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM07",
+              "name": "PrmDoesNotListScopes",
+              "shortDescription": {
+                "text": "PRM does not list scopes"
+              },
+              "fullDescription": {
+                "text": "`scopes_supported` is RECOMMENDED; MCP clients fall back to it when the challenge carries no `scope`, to request least privilege."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm07/",
+              "help": {
+                "text": "`scopes_supported` is RECOMMENDED; MCP clients fall back to it when the challenge carries no `scope`, to request least privilege.\n\nRemediation: List the scopes the server understands in `scopes_supported`.",
+                "markdown": "`scopes_supported` is RECOMMENDED; MCP clients fall back to it when the challenge carries no `scope`, to request least privilege.\n\n**Remediation:** List the scopes the server understands in `scopes_supported`.\n\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM08",
+              "name": "PrmResourceHasAFragmentOrQuery",
+              "shortDescription": {
+                "text": "PRM resource has a fragment or query"
+              },
+              "fullDescription": {
+                "text": "The resource identifier becomes the RFC 8707 `resource` parameter, which MUST NOT contain a fragment and SHOULD NOT contain a query."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm08/",
+              "help": {
+                "text": "The resource identifier becomes the RFC 8707 `resource` parameter, which MUST NOT contain a fragment and SHOULD NOT contain a query.\n\nRemediation: Use a resource URL without `#fragment` and without `?query`.",
+                "markdown": "The resource identifier becomes the RFC 8707 `resource` parameter, which MUST NOT contain a fragment and SHOULD NOT contain a query.\n\n**Remediation:** Use a resource URL without `#fragment` and without `?query`.\n\n- [RFC 8707 Resource Indicators](https://www.rfc-editor.org/rfc/rfc8707)\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM09",
+              "name": "Unsafe",
+              "shortDescription": {
+                "text": "Unsafe signed_metadata"
+              },
+              "fullDescription": {
+                "text": "Signed metadata takes precedence over plain values (RFC 9728 §2.2). It MUST be a JWS with an `iss` claim; `alg=none`, or claims that contradict the JSON, defeat its purpose."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm09/",
+              "help": {
+                "text": "Signed metadata takes precedence over plain values (RFC 9728 §2.2). It MUST be a JWS with an `iss` claim; `alg=none`, or claims that contradict the JSON, defeat its purpose.\n\nRemediation: Sign metadata with an asymmetric algorithm, include `iss`, and keep the signed claims identical to the plain document (or drop `signed_metadata`).",
+                "markdown": "Signed metadata takes precedence over plain values (RFC 9728 §2.2). It MUST be a JWS with an `iss` claim; `alg=none`, or claims that contradict the JSON, defeat its purpose.\n\n**Remediation:** Sign metadata with an asymmetric algorithm, include `iss`, and keep the signed claims identical to the plain document (or drop `signed_metadata`).\n\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM10",
+              "name": "AdvertisedByTheResource",
+              "shortDescription": {
+                "text": "offline_access advertised by the resource"
+              },
+              "fullDescription": {
+                "text": "2026-07-28: MCP servers SHOULD NOT include `offline_access` in `scopes_supported` or challenges; refresh-token issuance is the client's and authorization server's decision, and advertising it nudges clients into long-lived credentials."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm10/",
+              "help": {
+                "text": "2026-07-28: MCP servers SHOULD NOT include `offline_access` in `scopes_supported` or challenges; refresh-token issuance is the client's and authorization server's decision, and advertising it nudges clients into long-lived credentials.\n\nRemediation: Remove `offline_access` from `scopes_supported`.",
+                "markdown": "2026-07-28: MCP servers SHOULD NOT include `offline_access` in `scopes_supported` or challenges; refresh-token issuance is the client's and authorization server's decision, and advertising it nudges clients into long-lived credentials.\n\n**Remediation:** Remove `offline_access` from `scopes_supported`.\n\n- [MCP 2026-07-28 Authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/index)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-PRM11",
+              "name": "PrmVariantsDisagree",
+              "shortDescription": {
+                "text": "PRM variants disagree"
+              },
+              "fullDescription": {
+                "text": "Clients pick the PRM from the challenge or from different well-known URLs. If those documents name different authorization servers, clients end up in different trust domains (and a stale copy may point to a decommissioned issuer)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-prm11/",
+              "help": {
+                "text": "Clients pick the PRM from the challenge or from different well-known URLs. If those documents name different authorization servers, clients end up in different trust domains (and a stale copy may point to a decommissioned issuer).\n\nRemediation: Serve a single PRM and make every variant (challenge URL, path-inserted, root) return the same authorization servers.",
+                "markdown": "Clients pick the PRM from the challenge or from different well-known URLs. If those documents name different authorization servers, clients end up in different trust domains (and a stale copy may point to a decommissioned issuer).\n\n**Remediation:** Serve a single PRM and make every variant (challenge URL, path-inserted, root) return the same authorization servers.\n\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "prm"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-SCP01",
+              "name": "OverBroadScopesAdvertised",
+              "shortDescription": {
+                "text": "Over-broad scopes advertised"
+              },
+              "fullDescription": {
+                "text": "Wildcard or administrative scopes (`*`, `admin`, `all`, `files:*`) defeat least privilege: every client gets a token able to do everything, and a stolen token is a full compromise. MCP's scope selection and step-up model assumes fine-grained scopes."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-scp01/",
+              "help": {
+                "text": "Wildcard or administrative scopes (`*`, `admin`, `all`, `files:*`) defeat least privilege: every client gets a token able to do everything, and a stolen token is a full compromise. MCP's scope selection and step-up model assumes fine-grained scopes.\n\nRemediation: Split permissions into narrow scopes (e.g. `notes:read`, `notes:write`), advertise the minimum in the challenge, and use 403 `insufficient_scope` step-up for the rest.",
+                "markdown": "Wildcard or administrative scopes (`*`, `admin`, `all`, `files:*`) defeat least privilege: every client gets a token able to do everything, and a stolen token is a full compromise. MCP's scope selection and step-up model assumes fine-grained scopes.\n\n**Remediation:** Split permissions into narrow scopes (e.g. `notes:read`, `notes:write`), advertise the minimum in the challenge, and use 403 `insufficient_scope` step-up for the rest.\n\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [RFC 6749 §3.3 Access Token Scope](https://www.rfc-editor.org/rfc/rfc6749#section-3.3)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "scp"
+                ],
+                "precision": "medium",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-SCP02",
+              "name": "ChallengeDoesNotNameTheRequiredScope",
+              "shortDescription": {
+                "text": "Challenge does not name the required scope"
+              },
+              "fullDescription": {
+                "text": "Since 2025-11-25 servers SHOULD include `scope` in the 401 challenge so clients request exactly what the operation needs, instead of every scope in `scopes_supported`."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-scp02/",
+              "help": {
+                "text": "Since 2025-11-25 servers SHOULD include `scope` in the 401 challenge so clients request exactly what the operation needs, instead of every scope in `scopes_supported`.\n\nRemediation: Add `scope=\"<scopes>\"` to the `WWW-Authenticate: Bearer` challenge.",
+                "markdown": "Since 2025-11-25 servers SHOULD include `scope` in the 401 challenge so clients request exactly what the operation needs, instead of every scope in `scopes_supported`.\n\n**Remediation:** Add `scope=\"<scopes>\"` to the `WWW-Authenticate: Bearer` challenge.\n\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [RFC 6750 §3.1 Error Codes](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "scp"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-SCP04",
+              "name": "ResourceScopesUnknownToTheAuthorizationServer",
+              "shortDescription": {
+                "text": "Resource scopes unknown to the authorization server"
+              },
+              "fullDescription": {
+                "text": "Scopes the resource advertises but the authorization server does not list will fail at authorization time, or are silently ignored, so clients end up with tokens that cannot call the tools."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-scp04/",
+              "help": {
+                "text": "Scopes the resource advertises but the authorization server does not list will fail at authorization time, or are silently ignored, so clients end up with tokens that cannot call the tools.\n\nRemediation: Keep PRM `scopes_supported` a subset of the authorization server's `scopes_supported` (when the AS publishes one).",
+                "markdown": "Scopes the resource advertises but the authorization server does not list will fail at authorization time, or are silently ignored, so clients end up with tokens that cannot call the tools.\n\n**Remediation:** Keep PRM `scopes_supported` a subset of the authorization server's `scopes_supported` (when the AS publishes one).\n\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "scp"
+                ],
+                "precision": "medium",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL01",
+              "name": "InstructionLikeTextInAToolDescription",
+              "shortDescription": {
+                "text": "Instruction-like text in a tool description"
+              },
+              "fullDescription": {
+                "text": "Descriptions are read by the model, not by the user. Phrases that address the model (\"ignore previous instructions\", \"do not tell the user\", \"before using any other tool, read ~/.ssh/id_rsa\") are the signature of tool poisoning: hidden instructions that hijack the agent."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool01/",
+              "help": {
+                "text": "Descriptions are read by the model, not by the user. Phrases that address the model (\"ignore previous instructions\", \"do not tell the user\", \"before using any other tool, read ~/.ssh/id_rsa\") are the signature of tool poisoning: hidden instructions that hijack the agent.\n\nRemediation: Describe what the tool does, for the user and the model, without directives about other tools, secrecy or data handling. Review the full text of every flagged description; remove the server if the text is not yours.",
+                "markdown": "Descriptions are read by the model, not by the user. Phrases that address the model (\"ignore previous instructions\", \"do not tell the user\", \"before using any other tool, read ~/.ssh/id_rsa\") are the signature of tool poisoning: hidden instructions that hijack the agent.\n\n**Remediation:** Describe what the tool does, for the user and the model, without directives about other tools, secrecy or data handling. Review the full text of every flagged description; remove the server if the text is not yours.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "medium",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL02",
+              "name": "InvisibleOrBidirectionalUnicodeInToolMetadata",
+              "shortDescription": {
+                "text": "Invisible or bidirectional Unicode in tool metadata"
+              },
+              "fullDescription": {
+                "text": "Zero-width, bidi-override and Unicode tag characters are invisible in clients but read by the model. Tag characters can smuggle whole sentences; bidi controls make the displayed text differ from what the model receives."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool02/",
+              "help": {
+                "text": "Zero-width, bidi-override and Unicode tag characters are invisible in clients but read by the model. Tag characters can smuggle whole sentences; bidi controls make the displayed text differ from what the model receives.\n\nRemediation: Strip format (Cf), private-use and control characters from names, descriptions and schemas; keep descriptions plain text.",
+                "markdown": "Zero-width, bidi-override and Unicode tag characters are invisible in clients but read by the model. Tag characters can smuggle whole sentences; bidi controls make the displayed text differ from what the model receives.\n\n**Remediation:** Strip format (Cf), private-use and control characters from names, descriptions and schemas; keep descriptions plain text.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [Unicode TR #36 Security Considerations](https://www.unicode.org/reports/tr36/)\n- [Trojan Source (CVE-2021-42574)](https://trojansource.codes/)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL03",
+              "name": "EncodedBlobInToolMetadata",
+              "shortDescription": {
+                "text": "Encoded blob in tool metadata"
+              },
+              "fullDescription": {
+                "text": "Base64, hex or percent-encoded payloads in a description serve no purpose for a human reader; models decode them readily, which makes them a way to hide instructions from reviewers."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool03/",
+              "help": {
+                "text": "Base64, hex or percent-encoded payloads in a description serve no purpose for a human reader; models decode them readily, which makes them a way to hide instructions from reviewers.\n\nRemediation: Remove encoded content from descriptions. If a format example is needed, keep it short and obviously illustrative.",
+                "markdown": "Base64, hex or percent-encoded payloads in a description serve no purpose for a human reader; models decode them readily, which makes them a way to hide instructions from reviewers.\n\n**Remediation:** Remove encoded content from descriptions. If a format example is needed, keep it short and obviously illustrative.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "medium",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL04",
+              "name": "ToolDescriptionReferencesOtherTools",
+              "shortDescription": {
+                "text": "Tool description references other tools (shadowing)"
+              },
+              "fullDescription": {
+                "text": "A tool that tells the model how to use *other* tools, especially tools from another server, can redirect actions (e.g. \"when sending email, BCC this address\") without ever being called itself. This is tool shadowing."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool04/",
+              "help": {
+                "text": "A tool that tells the model how to use *other* tools, especially tools from another server, can redirect actions (e.g. \"when sending email, BCC this address\") without ever being called itself. This is tool shadowing.\n\nRemediation: Keep each description about its own tool. Treat servers whose tools mention tools of other servers as untrusted.",
+                "markdown": "A tool that tells the model how to use *other* tools, especially tools from another server, can redirect actions (e.g. \"when sending email, BCC this address\") without ever being called itself. This is tool shadowing.\n\n**Remediation:** Keep each description about its own tool. Treat servers whose tools mention tools of other servers as untrusted.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "medium",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL05",
+              "name": "SensitivePathsOrSuspiciousUrlsInToolMetadata",
+              "shortDescription": {
+                "text": "Sensitive paths or suspicious URLs in tool metadata"
+              },
+              "fullDescription": {
+                "text": "References to SSH keys, cloud credentials, `.env` files or MCP client configs, and URLs pointing to request catchers, tunnels or raw IPs, are typical of credential-exfiltration payloads."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool05/",
+              "help": {
+                "text": "References to SSH keys, cloud credentials, `.env` files or MCP client configs, and URLs pointing to request catchers, tunnels or raw IPs, are typical of credential-exfiltration payloads.\n\nRemediation: Remove references to local secrets and to collection endpoints from descriptions; a remote tool has no reason to know about the user's files.",
+                "markdown": "References to SSH keys, cloud credentials, `.env` files or MCP client configs, and URLs pointing to request catchers, tunnels or raw IPs, are typical of credential-exfiltration payloads.\n\n**Remediation:** Remove references to local secrets and to collection endpoints from descriptions; a remote tool has no reason to know about the user's files.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "medium",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL06",
+              "name": "AbnormallyLongToolMetadata",
+              "shortDescription": {
+                "text": "Abnormally long tool metadata"
+              },
+              "fullDescription": {
+                "text": "Very long descriptions are hard to review and are where hidden instructions usually live (pushed below the fold of client UIs)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool06/",
+              "help": {
+                "text": "Very long descriptions are hard to review and are where hidden instructions usually live (pushed below the fold of client UIs).\n\nRemediation: Keep descriptions short (a few sentences); move documentation elsewhere.",
+                "markdown": "Very long descriptions are hard to review and are where hidden instructions usually live (pushed below the fold of client UIs).\n\n**Remediation:** Keep descriptions short (a few sentences); move documentation elsewhere.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "low",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL07",
+              "name": "ToolAnnotationsContradictTheName",
+              "shortDescription": {
+                "text": "Tool annotations contradict the tool's name"
+              },
+              "fullDescription": {
+                "text": "Clients use `readOnlyHint` / `destructiveHint` to decide whether to ask for confirmation. A `delete_*` tool marked read-only or non-destructive gets auto-approved."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool07/",
+              "help": {
+                "text": "Clients use `readOnlyHint` / `destructiveHint` to decide whether to ask for confirmation. A `delete_*` tool marked read-only or non-destructive gets auto-approved.\n\nRemediation: Set `destructiveHint: true` (and `readOnlyHint: false`) on tools that delete or overwrite data; set `readOnlyHint: true` only on tools without side effects.",
+                "markdown": "Clients use `readOnlyHint` / `destructiveHint` to decide whether to ask for confirmation. A `delete_*` tool marked read-only or non-destructive gets auto-approved.\n\n**Remediation:** Set `destructiveHint: true` (and `readOnlyHint: false`) on tools that delete or overwrite data; set `readOnlyHint: true` only on tools without side effects.\n\n- [MCP 2025-11-25 Tools (annotations)](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "medium",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL08",
+              "name": "ToolAcceptsArbitraryPathsOrCode",
+              "shortDescription": {
+                "text": "Tool accepts arbitrary URLs, paths or code"
+              },
+              "fullDescription": {
+                "text": "Unconstrained URL parameters enable SSRF from the server, path parameters enable traversal, and command/code parameters enable injection. These are the server-side risks a prompt-injected agent will exercise first."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool08/",
+              "help": {
+                "text": "Unconstrained URL parameters enable SSRF from the server, path parameters enable traversal, and command/code parameters enable injection. These are the server-side risks a prompt-injected agent will exercise first.\n\nRemediation: Constrain inputs with `enum`, `pattern` or `format`, validate server-side (allow-lists for hosts and base directories), and never pass them to a shell.",
+                "markdown": "Unconstrained URL parameters enable SSRF from the server, path parameters enable traversal, and command/code parameters enable injection. These are the server-side risks a prompt-injected agent will exercise first.\n\n**Remediation:** Constrain inputs with `enum`, `pattern` or `format`, validate server-side (allow-lists for hosts and base directories), and never pass them to a shell.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [OWASP MCP Top 10](https://owasp.org/www-project-mcp-top-10/)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "low",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TOOL09",
+              "name": "ConfusableOrCollidingToolNames",
+              "shortDescription": {
+                "text": "Confusable or colliding tool names"
+              },
+              "fullDescription": {
+                "text": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool09/",
+              "help": {
+                "text": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server.\n\nRemediation: Use ASCII tool names, and prefix them with a server-specific namespace to avoid collisions.",
+                "markdown": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server.\n\n**Remediation:** Use ASCII tool names, and prefix them with a server-specific namespace to avoid collisions.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [Unicode TR #39 Security Mechanisms](https://www.unicode.org/reports/tr39/)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN01",
+              "name": "McpEndpointNotServedOverHttps",
+              "shortDescription": {
+                "text": "MCP endpoint not served over HTTPS"
+              },
+              "fullDescription": {
+                "text": "Bearer tokens, tool arguments and results travel in clear text over plain HTTP. The MCP authorization spec requires HTTPS for all authorization-related traffic, and bearer tokens must only be sent over TLS."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn01/",
+              "help": {
+                "text": "Bearer tokens, tool arguments and results travel in clear text over plain HTTP. The MCP authorization spec requires HTTPS for all authorization-related traffic, and bearer tokens must only be sent over TLS.\n\nRemediation: Serve the MCP endpoint over HTTPS only (TLS 1.2+), and redirect or refuse plain HTTP. Loopback development servers are exempt.",
+                "markdown": "Bearer tokens, tool arguments and results travel in clear text over plain HTTP. The MCP authorization spec requires HTTPS for all authorization-related traffic, and bearer tokens must only be sent over TLS.\n\n**Remediation:** Serve the MCP endpoint over HTTPS only (TLS 1.2+), and redirect or refuse plain HTTP. Loopback development servers are exempt.\n\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)\n- [RFC 9325 (BCP 195) TLS Recommendations](https://www.rfc-editor.org/rfc/rfc9325)\n- [OAuth 2.1 (draft-ietf-oauth-v2-1-16)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-16)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "9.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN02",
+              "name": "LegacyTlsAccepted",
+              "shortDescription": {
+                "text": "Legacy TLS (1.0/1.1) accepted"
+              },
+              "fullDescription": {
+                "text": "TLS 1.0 and 1.1 are deprecated (RFC 8996) and have known weaknesses. RFC 8414 requires TLS 1.2 for authorization servers; BCP 195 applies to protected resources (RFC 9728 §7.1)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn02/",
+              "help": {
+                "text": "TLS 1.0 and 1.1 are deprecated (RFC 8996) and have known weaknesses. RFC 8414 requires TLS 1.2 for authorization servers; BCP 195 applies to protected resources (RFC 9728 §7.1).\n\nRemediation: Set the minimum TLS version to 1.2 (prefer 1.3) on the load balancer, reverse proxy or gateway in front of the server.",
+                "markdown": "TLS 1.0 and 1.1 are deprecated (RFC 8996) and have known weaknesses. RFC 8414 requires TLS 1.2 for authorization servers; BCP 195 applies to protected resources (RFC 9728 §7.1).\n\n**Remediation:** Set the minimum TLS version to 1.2 (prefer 1.3) on the load balancer, reverse proxy or gateway in front of the server.\n\n- [RFC 8996 Deprecating TLS 1.0 and 1.1](https://www.rfc-editor.org/rfc/rfc8996)\n- [RFC 9325 (BCP 195) TLS Recommendations](https://www.rfc-editor.org/rfc/rfc9325)\n- [RFC 8414 Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN03",
+              "name": "TlsCertificateInvalidOrExpiring",
+              "shortDescription": {
+                "text": "TLS certificate invalid or expiring"
+              },
+              "fullDescription": {
+                "text": "Clients must validate the server certificate (RFC 9728 §7.3, RFC 8414 §6). An invalid certificate forces clients to disable validation or fail; an expiring one is an outage waiting to happen."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn03/",
+              "help": {
+                "text": "Clients must validate the server certificate (RFC 9728 §7.3, RFC 8414 §6). An invalid certificate forces clients to disable validation or fail; an expiring one is an outage waiting to happen.\n\nRemediation: Serve a certificate from a publicly trusted CA that matches the hostname, and automate renewal (ACME).",
+                "markdown": "Clients must validate the server certificate (RFC 9728 §7.3, RFC 8414 §6). An invalid certificate forces clients to disable validation or fail; an expiring one is an outage waiting to happen.\n\n**Remediation:** Serve a certificate from a publicly trusted CA that matches the hostname, and automate renewal (ACME).\n\n- [RFC 9325 (BCP 195) TLS Recommendations](https://www.rfc-editor.org/rfc/rfc9325)\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN04",
+              "name": "PlainHttpNotRedirectedToHttps",
+              "shortDescription": {
+                "text": "Plain HTTP not redirected to HTTPS"
+              },
+              "fullDescription": {
+                "text": "When the plain-HTTP port answers with content instead of a redirect, misconfigured clients can send tokens in clear text without noticing."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn04/",
+              "help": {
+                "text": "When the plain-HTTP port answers with content instead of a redirect, misconfigured clients can send tokens in clear text without noticing.\n\nRemediation: Answer every plain HTTP request with a 301/308 redirect to the HTTPS URL (and never process the request), or close port 80 entirely.",
+                "markdown": "When the plain-HTTP port answers with content instead of a redirect, misconfigured clients can send tokens in clear text without noticing.\n\n**Remediation:** Answer every plain HTTP request with a 301/308 redirect to the HTTPS URL (and never process the request), or close port 80 entirely.\n\n- [RFC 6797 HTTP Strict Transport Security](https://www.rfc-editor.org/rfc/rfc6797)\n- [MCP 2025-11-25 Authorization](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN05",
+              "name": "HstsHeaderMissing",
+              "shortDescription": {
+                "text": "HSTS header missing"
+              },
+              "fullDescription": {
+                "text": "Without Strict-Transport-Security, a network attacker can downgrade the first connection of browser-based clients to plain HTTP."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn05/",
+              "help": {
+                "text": "Without Strict-Transport-Security, a network attacker can downgrade the first connection of browser-based clients to plain HTTP.\n\nRemediation: Send `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response.",
+                "markdown": "Without Strict-Transport-Security, a network attacker can downgrade the first connection of browser-based clients to plain HTTP.\n\n**Remediation:** Send `Strict-Transport-Security: max-age=31536000; includeSubDomains` on every HTTPS response.\n\n- [RFC 6797 HTTP Strict Transport Security](https://www.rfc-editor.org/rfc/rfc6797)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN06",
+              "name": "LegacyTransportOnly",
+              "shortDescription": {
+                "text": "Legacy HTTP+SSE transport only"
+              },
+              "fullDescription": {
+                "text": "The HTTP+SSE transport (2024-11-05) is replaced by Streamable HTTP since 2025-03-26 and formally deprecated in 2026-07-28. It carries the session identifier in the URL and lacks the protocol-version and Origin requirements of the new transport."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn06/",
+              "help": {
+                "text": "The HTTP+SSE transport (2024-11-05) is replaced by Streamable HTTP since 2025-03-26 and formally deprecated in 2026-07-28. It carries the session identifier in the URL and lacks the protocol-version and Origin requirements of the new transport.\n\nRemediation: Expose a Streamable HTTP endpoint (single POST endpoint). Keep the SSE endpoint only for legacy clients, behind the same authorization.",
+                "markdown": "The HTTP+SSE transport (2024-11-05) is replaced by Streamable HTTP since 2025-03-26 and formally deprecated in 2026-07-28. It carries the session identifier in the URL and lacks the protocol-version and Origin requirements of the new transport.\n\n**Remediation:** Expose a Streamable HTTP endpoint (single POST endpoint). Keep the SSE endpoint only for legacy clients, behind the same authorization.\n\n- [MCP 2025-11-25 Transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)\n- [MCP 2026-07-28 Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN07",
+              "name": "SessionIdentifierCarriedInAUrl",
+              "shortDescription": {
+                "text": "Session identifier carried in a URL"
+              },
+              "fullDescription": {
+                "text": "URLs end up in access logs, proxies, browser history and Referer headers. A session identifier in a URL can be replayed by anyone who reads those logs (session hijacking)."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn07/",
+              "help": {
+                "text": "URLs end up in access logs, proxies, browser history and Referer headers. A session identifier in a URL can be replayed by anyone who reads those logs (session hijacking).\n\nRemediation: Carry the session only in the `Mcp-Session-Id` header (Streamable HTTP), never in a query string or path.",
+                "markdown": "URLs end up in access logs, proxies, browser history and Referer headers. A session identifier in a URL can be replayed by anyone who reads those logs (session hijacking).\n\n**Remediation:** Carry the session only in the `Mcp-Session-Id` header (Streamable HTTP), never in a query string or path.\n\n- [MCP 2025-11-25 Transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN08",
+              "name": "WeakMcpSessionId",
+              "shortDescription": {
+                "text": "Weak Mcp-Session-Id"
+              },
+              "fullDescription": {
+                "text": "Session IDs SHOULD be globally unique and cryptographically secure and MUST contain only visible ASCII. Guessable identifiers let an attacker inject events into or hijack another user's session."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn08/",
+              "help": {
+                "text": "Session IDs SHOULD be globally unique and cryptographically secure and MUST contain only visible ASCII. Guessable identifiers let an attacker inject events into or hijack another user's session.\n\nRemediation: Generate session IDs from a CSPRNG with at least 128 bits of entropy (e.g. `secrets.token_urlsafe(32)` or a random UUIDv4), bind them to the authenticated user, and never reuse them.",
+                "markdown": "Session IDs SHOULD be globally unique and cryptographically secure and MUST contain only visible ASCII. Guessable identifiers let an attacker inject events into or hijack another user's session.\n\n**Remediation:** Generate session IDs from a CSPRNG with at least 128 bits of entropy (e.g. `secrets.token_urlsafe(32)` or a random UUIDv4), bind them to the authenticated user, and never reuse them.\n\n- [MCP 2025-11-25 Transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "8.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN09",
+              "name": "SessionIdMintedOnAStatelessRevision",
+              "shortDescription": {
+                "text": "Session ID minted on a stateless revision"
+              },
+              "fullDescription": {
+                "text": "Revision 2026-07-28 removed protocol sessions: servers should not mint or echo `Mcp-Session-Id`. A leftover session layer is unused attack surface."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn09/",
+              "help": {
+                "text": "Revision 2026-07-28 removed protocol sessions: servers should not mint or echo `Mcp-Session-Id`. A leftover session layer is unused attack surface.\n\nRemediation: Drop session handling when serving 2026-07-28 clients; keep per-request authorization.",
+                "markdown": "Revision 2026-07-28 removed protocol sessions: servers should not mint or echo `Mcp-Session-Id`. A leftover session layer is unused attack surface.\n\n**Remediation:** Drop session handling when serving 2026-07-28 clients; keep per-request authorization.\n\n- [MCP 2026-07-28 Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-TRN10",
+              "name": "WeakSecurityHeadersOnDiscoveryEndpoints",
+              "shortDescription": {
+                "text": "Weak security headers on discovery endpoints"
+              },
+              "fullDescription": {
+                "text": "Metadata documents steer clients to authorization servers. They should not be MIME-sniffable, and must never be readable cross-origin with credentials."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn10/",
+              "help": {
+                "text": "Metadata documents steer clients to authorization servers. They should not be MIME-sniffable, and must never be readable cross-origin with credentials.\n\nRemediation: Serve metadata as `application/json` with `X-Content-Type-Options: nosniff`. Public CORS (`*`) is fine for metadata, but never combine it with `Access-Control-Allow-Credentials: true`.",
+                "markdown": "Metadata documents steer clients to authorization servers. They should not be MIME-sniffable, and must never be readable cross-origin with credentials.\n\n**Remediation:** Serve metadata as `application/json` with `X-Content-Type-Options: nosniff`. Public CORS (`*`) is fine for metadata, but never combine it with `Access-Control-Allow-Credentials: true`.\n\n- [RFC 9700 OAuth 2.0 Security BCP](https://www.rfc-editor.org/rfc/rfc9700)\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "3.0",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
+              "id": "MCPP-ERR00",
+              "name": "CheckError",
+              "shortDescription": {
+                "text": "Check failed to run"
+              },
+              "fullDescription": {
+                "text": "A check raised an internal error; its result is unknown."
+              },
+              "help": {
+                "text": "Re-run with --verbose and report the error to the mcp-posture maintainers."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "mcp-posture"
+                ],
+                "security-severity": "0.5"
+              }
+            }
+          ]
+        }
+      },
+      "automationDetails": {
+        "id": "mcp-posture/"
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": [],
+          "endTimeUtc": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "MCPP-ASM05",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "code_challenge_methods_supported includes plain. [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://as.test",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "e26a94d91e4e2bd570a3fd0a3bd7fc71",
+            "primaryLocationLineHash": "e26a94d91e4e2bd570a3fd0a3bd7fc71"
+          },
+          "properties": {
+            "severity": "high",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://as.test",
+            "evidence": [
+              "code_challenge_methods_supported: [\"S256\", \"plain\"]"
+            ]
+          }
+        },
+        {
+          "ruleId": "MCPP-AUTHN02",
+          "ruleIndex": 14,
+          "level": "warning",
+          "message": {
+            "text": "The 401 response carries no Bearer challenge (schemes seen: none). [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://mcp.test/mcp",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "1b21677c385d749bb3926f8c6c7599c1",
+            "primaryLocationLineHash": "1b21677c385d749bb3926f8c6c7599c1"
+          },
+          "properties": {
+            "severity": "medium",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://mcp.test/mcp",
+            "evidence": [
+              "unauthenticated MCP request"
+            ]
+          }
+        },
+        {
+          "ruleId": "MCPP-ASM11",
+          "ruleIndex": 10,
+          "level": "note",
+          "message": {
+            "text": "authorization_response_iss_parameter_supported is not true. [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://as.test",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "9965169956aafec1466e356d8fbfc9b5",
+            "primaryLocationLineHash": "9965169956aafec1466e356d8fbfc9b5"
+          },
+          "properties": {
+            "severity": "low",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://as.test"
+          }
+        },
+        {
+          "ruleId": "MCPP-AUTHN06",
+          "ruleIndex": 18,
+          "level": "note",
+          "message": {
+            "text": "Response headers disclose software versions: server: nginx/1.25.3. [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://mcp.test",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "6e9c662e27987dca845b6382483fbb16",
+            "primaryLocationLineHash": "6e9c662e27987dca845b6382483fbb16"
+          },
+          "properties": {
+            "severity": "low",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://mcp.test"
+          }
+        },
+        {
+          "ruleId": "MCPP-TRN05",
+          "ruleIndex": 52,
+          "level": "note",
+          "message": {
+            "text": "No Strict-Transport-Security header on 5 HTTPS response(s). [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://mcp.test",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "5c3d3edba2eb241e162acd3baedbcb71",
+            "primaryLocationLineHash": "5c3d3edba2eb241e162acd3baedbcb71"
+          },
+          "properties": {
+            "severity": "low",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://mcp.test",
+            "evidence": [
+              "response without HSTS"
+            ]
+          },
+          "suppressions": [
+            {
+              "kind": "external",
+              "status": "accepted",
+              "justification": "HSTS is set by the CDN in front"
+            }
+          ]
+        },
+        {
+          "ruleId": "MCPP-TRN10",
+          "ruleIndex": 57,
+          "level": "note",
+          "message": {
+            "text": "https://mcp.test/.well-known/oauth-protected-resource/mcp: missing X-Content-Type-Options: nosniff. [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://mcp.test/.well-known/oauth-protected-resource/mcp",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "8f48429646614d55d5c2a4a856cb0faf",
+            "primaryLocationLineHash": "8f48429646614d55d5c2a4a856cb0faf"
+          },
+          "properties": {
+            "severity": "low",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://mcp.test/.well-known/oauth-protected-resource/mcp",
+            "evidence": [
+              "metadata response headers"
+            ]
+          }
+        },
+        {
+          "ruleId": "MCPP-ASM08",
+          "ruleIndex": 7,
+          "level": "note",
+          "message": {
+            "text": "Audience restriction cannot be verified passively; run with --active. [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://as.test",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "e4d2c9bea18e4b620b4eddc39289fb3b",
+            "primaryLocationLineHash": "e4d2c9bea18e4b620b4eddc39289fb3b"
+          },
+          "properties": {
+            "severity": "info",
+            "confidence": "low",
+            "target": "https://mcp.test/mcp",
+            "location": "https://as.test"
+          }
+        },
+        {
+          "ruleId": "MCPP-CIMD02",
+          "ruleIndex": 20,
+          "level": "note",
+          "message": {
+            "text": "Registration paths offered: CIMD, pre-registration. [https://mcp.test/mcp]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "targets.txt"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 1
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "https://mcp.test/mcp#https://as.test",
+                  "kind": "resource"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "mcpPosture/v1": "dac9231020d6eeccc5f5172c06078606",
+            "primaryLocationLineHash": "dac9231020d6eeccc5f5172c06078606"
+          },
+          "properties": {
+            "severity": "info",
+            "confidence": "high",
+            "target": "https://mcp.test/mcp",
+            "location": "https://as.test",
+            "evidence": [
+              "strategies: CIMD, pre-registration"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "mode": "passive",
+        "failOn": "high"
+      }
+    }
+  ]
+}

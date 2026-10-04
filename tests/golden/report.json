@@ -29,7 +29,14 @@
           "location": "https://as.test",
           "message": "code_challenge_methods_supported includes plain.",
           "key": "",
-          "evidence": [],
+          "evidence": [
+            {
+              "summary": "code_challenge_methods_supported",
+              "request": "GET https://as.test/.well-known/oauth-authorization-server",
+              "status": 200,
+              "excerpt": "[\"S256\", \"plain\"]"
+            }
+          ],
           "suppression": null,
           "fingerprint": "e26a94d91e4e2bd570a3fd0a3bd7fc71"
         },

@@ -1,6 +1,6 @@
 """Run the fixture servers on loopback for demos and manual testing.
 
-    uv run python scripts/demo_servers.py            # secure on :8401, misconfigured on :8402
+    uv run python scripts/demo_servers.py   # secure :8401, misconfigured :8402, poisoned :8403
     uv run mcp-posture scan http://127.0.0.1:8402/mcp --allow-private
 
 Never point the scanner at servers you do not own; these local fixtures exist for that.
@@ -19,6 +19,8 @@ import uvicorn
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tests.fixtures.servers import (
+    POISONED_PROMPTS,
+    POISONED_TOOLS,
     McpProfile,
     counter_sessions,
     mcp_app,
@@ -69,9 +71,14 @@ def misconfigured(base: str) -> McpProfile:
     )
 
 
+def poisoned(base: str) -> McpProfile:
+    return profile(base, require_auth=False, tools=POISONED_TOOLS, prompts=POISONED_PROMPTS)
+
+
 SERVERS: dict[int, tuple[str, Callable[[str], McpProfile]]] = {
     8401: ("secure", profile),
     8402: ("misconfigured", misconfigured),
+    8403: ("poisoned", poisoned),
 }
 
 

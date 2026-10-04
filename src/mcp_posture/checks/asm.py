@@ -6,7 +6,13 @@ from collections.abc import Iterator
 from urllib.parse import urlsplit
 
 from mcp_posture.checks import _refs as R
-from mcp_posture.checks._util import auth_servers, is_https, is_loopback_url, str_list
+from mcp_posture.checks._util import (
+    auth_servers,
+    field_evidence,
+    is_https,
+    is_loopback_url,
+    str_list,
+)
 from mcp_posture.context import ScanContext, exchange_evidence
 from mcp_posture.models import (
     Confidence,
@@ -96,7 +102,7 @@ def asm02(ctx: ScanContext) -> Iterator[Finding]:
                 "MCPP-ASM02",
                 f"Metadata at {loc} declares issuer {issuer!r}, expected {s.issuer!r}.",
                 location=loc,
-                evidence=[Evidence(summary="issuer", excerpt=issuer)],
+                evidence=field_evidence(s, "issuer"),
             )
 
 
@@ -143,7 +149,12 @@ def asm04(ctx: ScanContext) -> Iterator[Finding]:
             msg = f"code_challenge_methods_supported {methods} does not include S256."
         else:
             continue
-        yield ctx.finding("MCPP-ASM04", msg, location=s.issuer)
+        yield ctx.finding(
+            "MCPP-ASM04",
+            msg,
+            location=s.issuer,
+            evidence=field_evidence(s, "code_challenge_methods_supported"),
+        )
 
 
 @check(
@@ -160,7 +171,10 @@ def asm05(ctx: ScanContext) -> Iterator[Finding]:
     for s, doc in auth_servers(ctx):
         if "plain" in str_list(doc.get("code_challenge_methods_supported")):
             yield ctx.finding(
-                "MCPP-ASM05", "code_challenge_methods_supported includes plain.", location=s.issuer
+                "MCPP-ASM05",
+                "code_challenge_methods_supported includes plain.",
+                location=s.issuer,
+                evidence=field_evidence(s, "code_challenge_methods_supported"),
             )
 
 
@@ -192,7 +206,10 @@ def asm06(ctx: ScanContext) -> Iterator[Finding]:
         ]
         if bad:
             yield ctx.finding(
-                "MCPP-ASM06", f"grant_types_supported includes {', '.join(bad)}.", location=s.issuer
+                "MCPP-ASM06",
+                f"grant_types_supported includes {', '.join(bad)}.",
+                location=s.issuer,
+                evidence=field_evidence(s, "grant_types_supported"),
             )
 
 
@@ -215,6 +232,7 @@ def asm07(ctx: ScanContext) -> Iterator[Finding]:
                 f"response_types_supported {types} does not include code.",
                 location=s.issuer,
                 key="code",
+                evidence=field_evidence(s, "response_types_supported"),
             )
         implicit = [t for t in types if "token" in t.split()]
         if implicit:
@@ -223,6 +241,7 @@ def asm07(ctx: ScanContext) -> Iterator[Finding]:
                 f"response_types_supported includes {', '.join(implicit)}.",
                 location=s.issuer,
                 key="token",
+                evidence=field_evidence(s, "response_types_supported"),
             )
 
 

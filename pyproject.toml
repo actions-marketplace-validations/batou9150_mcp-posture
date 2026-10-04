@@ -61,7 +61,8 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "S"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106", "S108"]
+"tests/**" = ["S101", "S105", "S106", "S108", "RUF001"]
+"src/mcp_posture/heuristics.py" = ["E501", "RUF001"]  # regex tables and homoglyph map
 
 [tool.mypy]
 strict = true
