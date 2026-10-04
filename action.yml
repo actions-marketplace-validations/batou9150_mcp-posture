@@ -102,8 +102,9 @@ runs:
           read -r -a extra <<< "$MCPP_ARGS"
           cmd+=("${extra[@]}")
         fi
-        uvx --quiet --from "$MCPP_SOURCE" mcp-posture "${cmd[@]}"
-        code=$?
+        # The step shell runs with -e: capture the exit code instead of aborting on findings.
+        code=0
+        uvx --quiet --from "$MCPP_SOURCE" mcp-posture "${cmd[@]}" || code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
         echo "sarif-file=$MCPP_OUT/results.sarif" >> "$GITHUB_OUTPUT"
         echo "json-file=$MCPP_OUT/results.json" >> "$GITHUB_OUTPUT"

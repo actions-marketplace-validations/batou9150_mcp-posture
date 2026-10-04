@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -44,3 +47,35 @@ def test_workflows_parse_and_restrict_permissions() -> None:
     for path in (ROOT / ".github/workflows").glob("*.yml"):
         doc = load(path.relative_to(ROOT).as_posix())
         assert "permissions" in doc, f"{path.name} must declare least-privilege permissions"
+
+
+def test_scan_step_reports_exit_code_under_errexit(tmp_path: Path) -> None:
+    """GitHub runs `shell: bash` as `bash -e`: findings (exit 1) must not abort the step."""
+    step = next(s for s in load("action.yml")["runs"]["steps"] if s.get("id") == "scan")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake = bin_dir / "uvx"
+    fake.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    fake.chmod(0o755)
+    script = tmp_path / "step.sh"
+    script.write_text(step["run"], encoding="utf-8")
+    output = tmp_path / "github_output"
+    env = {
+        "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+        "GITHUB_OUTPUT": str(output),
+        "MCPP_OUT": str(tmp_path / "out"),
+        "MCPP_SOURCE": str(ROOT),
+        "MCPP_FAIL_ON": "high",
+        "MCPP_TARGETS": "https://mcp.example.com/mcp",
+        **{k: "" for k in ("MCPP_CONFIG", "MCPP_TARGETS_FILE", "MCPP_BASELINE", "MCPP_ARGS")},
+        "MCPP_ACTION_TOKEN": "",
+    }
+    bash = shutil.which("bash")
+    assert bash
+    result = subprocess.run(  # noqa: S603
+        [bash, "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        env=env,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "exit-code=1" in output.read_text(encoding="utf-8").splitlines()
