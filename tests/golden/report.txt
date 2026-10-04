@@ -1,0 +1,26 @@
+https://mcp.test/mcp
+  spec 2026-07-28 (default) · transport not detected (authentication required; pass a token to probe further) · auth 
+required
+┏━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃Severity ┃ Check        ┃ Finding                                                                                     ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│high     │ MCPP-ASM05   │ PKCE plain method allowed                                                                   │
+│         │              │ code_challenge_methods_supported includes plain.                                            │
+│medium   │ MCPP-AUTHN02 │ 401 without a Bearer challenge                                                              │
+│         │              │ The 401 response carries no Bearer challenge (schemes seen: none).                          │
+│low      │ MCPP-ASM11   │ Authorization response iss parameter not supported                                          │
+│         │              │ authorization_response_iss_parameter_supported is not true.                                 │
+│low      │ MCPP-AUTHN06 │ Error responses leak internals                                                              │
+│         │              │ Response headers disclose software versions: server: nginx/1.25.3.                          │
+│low      │ MCPP-TRN05   │ HSTS header missing                                                                         │
+│         │              │ No Strict-Transport-Security header on 5 HTTPS response(s).                                 │
+│low      │ MCPP-TRN10   │ Weak security headers on discovery endpoints                                                │
+│         │              │ https://mcp.test/.well-known/oauth-protected-resource/mcp: missing X-Content-Type-Options:  │
+│         │              │ nosniff.                                                                                    │
+│info     │ MCPP-ASM08   │ Resource indicator (RFC 8707) enforcement not verified                                      │
+│         │              │ Audience restriction cannot be verified passively; run with --active.                       │
+│info     │ MCPP-CIMD02  │ Client registration strategies                                                              │
+│         │              │ Registration paths offered: CIMD, pre-registration.                                         │
+└─────────┴──────────────┴─────────────────────────────────────────────────────────────────────────────────────────────┘
+
+1 target(s), 0 unreachable · 0 critical, 1 high, 1 medium, 4 low, 2 info · fail-on high

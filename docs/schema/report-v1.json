@@ -1,0 +1,405 @@
+{
+  "$defs": {
+    "Confidence": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "What the scanner observed. Strings are redacted again at render time.",
+      "properties": {
+        "excerpt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Excerpt"
+        },
+        "request": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Request"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "fingerprint": {
+          "readOnly": true,
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "key": {
+          "default": "",
+          "title": "Key",
+          "type": "string"
+        },
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "suppression": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SuppressionInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "title",
+        "severity",
+        "confidence",
+        "target",
+        "location",
+        "message",
+        "fingerprint"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "SpecRevision": {
+      "description": "MCP specification revisions the scanner knows about, oldest first.",
+      "enum": [
+        "2025-03-26",
+        "2025-06-18",
+        "2025-11-25",
+        "2026-07-28"
+      ],
+      "title": "SpecRevision",
+      "type": "string"
+    },
+    "Summary": {
+      "additionalProperties": false,
+      "properties": {
+        "findings": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Findings",
+          "type": "object"
+        },
+        "suppressed": {
+          "title": "Suppressed",
+          "type": "integer"
+        },
+        "targets": {
+          "title": "Targets",
+          "type": "integer"
+        },
+        "unreachable": {
+          "title": "Unreachable",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "targets",
+        "unreachable",
+        "findings",
+        "suppressed"
+      ],
+      "title": "Summary",
+      "type": "object"
+    },
+    "SuppressionInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "expired": {
+          "default": false,
+          "title": "Expired",
+          "type": "boolean"
+        },
+        "expires": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires"
+        },
+        "justification": {
+          "title": "Justification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "justification"
+      ],
+      "title": "SuppressionInfo",
+      "type": "object"
+    },
+    "TargetResult": {
+      "additionalProperties": false,
+      "properties": {
+        "auth_required": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auth Required"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "findings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "not_applicable": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Applicable",
+          "type": "array"
+        },
+        "reachable": {
+          "title": "Reachable",
+          "type": "boolean"
+        },
+        "revision_source": {
+          "enum": [
+            "pinned",
+            "negotiated",
+            "default"
+          ],
+          "title": "Revision Source",
+          "type": "string"
+        },
+        "source": {
+          "default": "cli",
+          "title": "Source",
+          "type": "string"
+        },
+        "spec_revision": {
+          "$ref": "#/$defs/SpecRevision"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "transport": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transport"
+        }
+      },
+      "required": [
+        "target",
+        "reachable",
+        "spec_revision",
+        "revision_source"
+      ],
+      "title": "TargetResult",
+      "type": "object"
+    },
+    "ToolInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "information_uri": {
+          "default": "https://github.com/batou9150/mcp-posture",
+          "title": "Information Uri",
+          "type": "string"
+        },
+        "name": {
+          "default": "mcp-posture",
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "ToolInfo",
+      "type": "object"
+    }
+  },
+  "$id": "https://batou9150.github.io/mcp-posture/schema/report-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "fail_on": {
+      "$ref": "#/$defs/Severity"
+    },
+    "generated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Generated At"
+    },
+    "mode": {
+      "enum": [
+        "passive",
+        "active"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary",
+      "readOnly": true
+    },
+    "targets": {
+      "items": {
+        "$ref": "#/$defs/TargetResult"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "tool": {
+      "$ref": "#/$defs/ToolInfo"
+    }
+  },
+  "required": [
+    "tool",
+    "generated_at",
+    "mode",
+    "fail_on",
+    "targets",
+    "summary"
+  ],
+  "title": "mcp-posture report",
+  "type": "object"
+}

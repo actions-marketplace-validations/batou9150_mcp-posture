@@ -1,0 +1,174 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "mcp-posture",
+    "version": "0.0.0-test",
+    "information_uri": "https://github.com/batou9150/mcp-posture"
+  },
+  "generated_at": "2026-01-01T00:00:00Z",
+  "mode": "passive",
+  "fail_on": "high",
+  "targets": [
+    {
+      "target": "https://mcp.test/mcp",
+      "name": null,
+      "source": "cli",
+      "reachable": true,
+      "error": null,
+      "spec_revision": "2026-07-28",
+      "revision_source": "default",
+      "transport": "unknown",
+      "auth_required": true,
+      "findings": [
+        {
+          "check_id": "MCPP-ASM05",
+          "title": "PKCE plain method allowed",
+          "severity": "high",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://as.test",
+          "message": "code_challenge_methods_supported includes plain.",
+          "key": "",
+          "evidence": [],
+          "suppression": null,
+          "fingerprint": "e26a94d91e4e2bd570a3fd0a3bd7fc71"
+        },
+        {
+          "check_id": "MCPP-AUTHN02",
+          "title": "401 without a Bearer challenge",
+          "severity": "medium",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://mcp.test/mcp",
+          "message": "The 401 response carries no Bearer challenge (schemes seen: none).",
+          "key": "",
+          "evidence": [
+            {
+              "summary": "unauthenticated MCP request",
+              "request": "POST https://mcp.test/mcp",
+              "status": 401,
+              "excerpt": null
+            }
+          ],
+          "suppression": null,
+          "fingerprint": "1b21677c385d749bb3926f8c6c7599c1"
+        },
+        {
+          "check_id": "MCPP-ASM11",
+          "title": "Authorization response iss parameter not supported",
+          "severity": "low",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://as.test",
+          "message": "authorization_response_iss_parameter_supported is not true.",
+          "key": "",
+          "evidence": [],
+          "suppression": null,
+          "fingerprint": "9965169956aafec1466e356d8fbfc9b5"
+        },
+        {
+          "check_id": "MCPP-AUTHN06",
+          "title": "Error responses leak internals",
+          "severity": "low",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://mcp.test",
+          "message": "Response headers disclose software versions: server: nginx/1.25.3.",
+          "key": "banner",
+          "evidence": [],
+          "suppression": null,
+          "fingerprint": "6e9c662e27987dca845b6382483fbb16"
+        },
+        {
+          "check_id": "MCPP-TRN05",
+          "title": "HSTS header missing",
+          "severity": "low",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://mcp.test",
+          "message": "No Strict-Transport-Security header on 5 HTTPS response(s).",
+          "key": "",
+          "evidence": [
+            {
+              "summary": "response without HSTS",
+              "request": "POST https://mcp.test/mcp",
+              "status": 401,
+              "excerpt": null
+            }
+          ],
+          "suppression": null,
+          "fingerprint": "5c3d3edba2eb241e162acd3baedbcb71"
+        },
+        {
+          "check_id": "MCPP-TRN10",
+          "title": "Weak security headers on discovery endpoints",
+          "severity": "low",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://mcp.test/.well-known/oauth-protected-resource/mcp",
+          "message": "https://mcp.test/.well-known/oauth-protected-resource/mcp: missing X-Content-Type-Options: nosniff.",
+          "key": "",
+          "evidence": [
+            {
+              "summary": "metadata response headers",
+              "request": "GET https://mcp.test/.well-known/oauth-protected-resource/mcp",
+              "status": 200,
+              "excerpt": null
+            }
+          ],
+          "suppression": null,
+          "fingerprint": "8f48429646614d55d5c2a4a856cb0faf"
+        },
+        {
+          "check_id": "MCPP-ASM08",
+          "title": "Resource indicator (RFC 8707) enforcement not verified",
+          "severity": "info",
+          "confidence": "low",
+          "target": "https://mcp.test/mcp",
+          "location": "https://as.test",
+          "message": "Audience restriction cannot be verified passively; run with --active.",
+          "key": "",
+          "evidence": [],
+          "suppression": null,
+          "fingerprint": "e4d2c9bea18e4b620b4eddc39289fb3b"
+        },
+        {
+          "check_id": "MCPP-CIMD02",
+          "title": "Client registration strategies",
+          "severity": "info",
+          "confidence": "high",
+          "target": "https://mcp.test/mcp",
+          "location": "https://as.test",
+          "message": "Registration paths offered: CIMD, pre-registration.",
+          "key": "",
+          "evidence": [
+            {
+              "summary": "strategies",
+              "request": null,
+              "status": null,
+              "excerpt": "CIMD, pre-registration"
+            }
+          ],
+          "suppression": null,
+          "fingerprint": "dac9231020d6eeccc5f5172c06078606"
+        }
+      ],
+      "not_applicable": [
+        "MCPP-ASM13",
+        "MCPP-TRN08"
+      ]
+    }
+  ],
+  "summary": {
+    "targets": 1,
+    "unreachable": 0,
+    "findings": {
+      "info": 2,
+      "low": 4,
+      "medium": 1,
+      "high": 1,
+      "critical": 0
+    },
+    "suppressed": 0
+  }
+}
