@@ -21,7 +21,9 @@ jobs:
       - name: Start local fixture servers
         run: |
           uv sync --locked
-          nohup uv run python scripts/demo_servers.py > demo.log 2>&1 &
+          # The venv interpreter, not `uv run`: a long-lived uv process keeps the cache locked
+          # and setup-uv's post-job cache prune times out waiting for it.
+          nohup .venv/bin/python scripts/demo_servers.py > demo.log 2>&1 &
           for _ in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:8402/mcp && exit 0; sleep 1; done
           cat demo.log; exit 1
       - name: Run the action against the misconfigured fixture
@@ -42,3 +44,6 @@ jobs:
           test "$CODE" = "1"
           jq -e '.runs[0].results | length > 0' "$SARIF"
           jq -e '.targets[0].findings | map(.check_id) | index("MCPP-ASM04") != null' "$REPORT"
+      - name: Stop fixture servers
+        if: always()
+        run: pkill -f scripts/demo_servers.py || true
