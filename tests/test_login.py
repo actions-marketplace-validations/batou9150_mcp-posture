@@ -859,3 +859,15 @@ def test_default_client_unavailable_falls_back_to_registration() -> None:
     flow = Flow(auth=AsProfile(metadata=DCR_METADATA), confirm=lambda q: True)
     assert flow.run(LoginOptions()).strategy == "dcr"
     assert any("client metadata document is unavailable" in m for m in flow.messages)
+
+
+def test_scope_aliases_are_not_reported_as_missing() -> None:
+    from mcp_posture.login import _scopes
+
+    requested = "openid https://www.googleapis.com/auth/userinfo.email email profile"
+    granted = (
+        "https://www.googleapis.com/auth/userinfo.email "
+        "https://www.googleapis.com/auth/userinfo.profile openid"
+    )
+    assert _scopes(requested) - _scopes(granted) == set()
+    assert _scopes("notes:read notes:write") - _scopes("notes:read") == {"notes:write"}

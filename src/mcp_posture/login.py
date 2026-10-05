@@ -134,6 +134,17 @@ def _vet_endpoint(name: str, url: object, net: NetSettings) -> str:
     raise LoginError(f"{name} {_text(url)!r} is not an https URL; refusing to use it")
 
 
+# Identity providers that answer with the long form of OIDC's short scopes (Google does).
+_SCOPE_ALIASES = {
+    "https://www.googleapis.com/auth/userinfo.email": "email",
+    "https://www.googleapis.com/auth/userinfo.profile": "profile",
+}
+
+
+def _scopes(scope: str) -> set[str]:
+    return {_SCOPE_ALIASES.get(s, s) for s in scope.split()}
+
+
 def _without_offline_access(scope: str | None) -> str | None:
     """Login never asks for refresh tokens it would discard (MCP 2026-07-28 PRM guidance)."""
     if scope is None:
@@ -734,7 +745,7 @@ async def login(
                 raise LoginError(f"unsupported token_type {_text(token_type, 40)!r} (Bearer only)")
             granted = doc.get("scope") if isinstance(doc.get("scope"), str) else None
             if server.scope and granted is not None:
-                missing = set(server.scope.split()) - set(granted.split())
+                missing = _scopes(server.scope) - _scopes(granted)
                 if missing:
                     warnings.append(
                         f"scope granted is narrower; missing: {' '.join(sorted(missing))}"
