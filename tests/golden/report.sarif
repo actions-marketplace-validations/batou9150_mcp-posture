@@ -1787,12 +1787,12 @@
                 "text": "Confusable or colliding tool names"
               },
               "fullDescription": {
-                "text": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server."
+                "text": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server. A name listed twice with different definitions hides one of them from review."
               },
               "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool09/",
               "help": {
-                "text": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server.\n\nRemediation: Use ASCII tool names, and prefix them with a server-specific namespace to avoid collisions.",
-                "markdown": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server.\n\n**Remediation:** Use ASCII tool names, and prefix them with a server-specific namespace to avoid collisions.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [Unicode TR #39 Security Mechanisms](https://www.unicode.org/reports/tr39/)"
+                "text": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server. A name listed twice with different definitions hides one of them from review.\n\nRemediation: Use ASCII tool names, and prefix them with a server-specific namespace to avoid collisions.",
+                "markdown": "Names with homoglyphs (a Cyrillic \"a\" in place of the Latin one) or names identical to another server's tools let a malicious server impersonate a trusted tool; clients that merge tool lists may route calls to the wrong server. A name listed twice with different definitions hides one of them from review.\n\n**Remediation:** Use ASCII tool names, and prefix them with a server-specific namespace to avoid collisions.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)\n- [Unicode TR #39 Security Mechanisms](https://www.unicode.org/reports/tr39/)"
               },
               "defaultConfiguration": {
                 "level": "warning"

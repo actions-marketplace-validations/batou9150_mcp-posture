@@ -36,12 +36,22 @@ class LockError(Exception):
     pass
 
 
+def duplicates(surface: Iterable[SurfaceItem]) -> list[str]:
+    """Locations listed more than once with different definitions."""
+    hashes: dict[str, set[str]] = {}
+    for i in surface:
+        hashes.setdefault(i.location, set()).add(item_hash(i))
+    return sorted(loc for loc, h in hashes.items() if len(h) > 1)
+
+
 def build_lock(surfaces: Mapping[str, Iterable[SurfaceItem]]) -> Lock:
+    """One entry per location; for a duplicated name, the first definition listed is pinned
+    and any other one shows up as a change on the next scan."""
     targets: dict[str, dict[str, LockItem]] = {}
     for url in sorted(surfaces):
-        items = {
-            i.location: LockItem(hash=item_hash(i), definition=canonical(i)) for i in surfaces[url]
-        }
+        items: dict[str, LockItem] = {}
+        for i in surfaces[url]:
+            items.setdefault(i.location, LockItem(hash=item_hash(i), definition=canonical(i)))
         targets[url] = dict(sorted(items.items()))
     return Lock(targets=targets)
 
@@ -71,6 +81,7 @@ class Change:
     location: str
     fields: tuple[str, ...]
     diff: str
+    hash: str = ""
 
 
 @dataclass(frozen=True)
@@ -85,17 +96,21 @@ class SurfaceDiff:
 
 
 def diff_surface(pinned: Mapping[str, LockItem], current: Iterable[SurfaceItem]) -> SurfaceDiff:
-    now = {i.location: i for i in current}
+    # A server may list the same name twice; every definition is compared, so a poisoned
+    # duplicate next to the pinned one is a change, not a silent shadow.
+    now: dict[str, dict[str, SurfaceItem]] = {}
+    for i in current:
+        now.setdefault(i.location, {}).setdefault(item_hash(i), i)
     added = tuple(sorted(set(now) - set(pinned)))
     removed = tuple(sorted(set(pinned) - set(now)))
     changed = []
     for loc in sorted(set(now) & set(pinned)):
-        item = now[loc]
-        if item_hash(item) == pinned[loc].hash:
-            continue
-        old, new = pinned[loc].definition, canonical(item)
-        fields = tuple(sorted(k for k in set(old) | set(new) if old.get(k) != new.get(k)))
-        changed.append(Change(loc, fields, unified_diff(old, new, loc)))
+        for h, item in sorted(now[loc].items()):
+            if h == pinned[loc].hash:
+                continue
+            old, new = pinned[loc].definition, canonical(item)
+            fields = tuple(sorted(k for k in set(old) | set(new) if old.get(k) != new.get(k)))
+            changed.append(Change(loc, fields, unified_diff(old, new, loc), h))
     return SurfaceDiff(added, removed, tuple(changed))
 
 

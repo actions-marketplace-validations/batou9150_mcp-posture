@@ -76,8 +76,9 @@ def pin03(ctx: ScanContext) -> Iterator[Finding]:
     for c in d.changed if d else ():
         yield ctx.finding(
             "MCPP-PIN03",
-            f"{c.location} changed: {', '.join(c.fields)}.",
+            f"{c.location} changed: {', '.join(c.fields) or 'duplicate definition'}.",
             location=c.location,
+            key=c.hash,
             evidence=[Evidence(summary="diff against the baseline", excerpt=visible(c.diff))],
         )
 

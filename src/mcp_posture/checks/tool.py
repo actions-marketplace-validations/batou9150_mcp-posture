@@ -11,7 +11,7 @@ from mcp_posture.checks import _refs as R
 from mcp_posture.context import MAX_JSON_DEPTH, TRUNCATED, ScanContext, SurfaceItem, thaw
 from mcp_posture.models import Confidence, Evidence, Finding, Severity
 from mcp_posture.registry import check
-from mcp_posture.surface import texts
+from mcp_posture.surface import item_hash, texts
 
 LONG_TEXT = 1024
 VERY_LONG_TEXT = 4096
@@ -375,7 +375,8 @@ def tool08(ctx: ScanContext) -> Iterator[Finding]:
     references=[R.MCP_SECURITY_BP, R.UNICODE_TR39],
     rationale="""Names with homoglyphs (a Cyrillic "a" in place of the Latin one) or names
         identical to another server's tools let a malicious server impersonate a trusted
-        tool; clients that merge tool lists may route calls to the wrong server.""",
+        tool; clients that merge tool lists may route calls to the wrong server. A name
+        listed twice with different definitions hides one of them from review.""",
     remediation="""Use ASCII tool names, and prefix them with a server-specific namespace
         to avoid collisions.""",
 )
@@ -389,6 +390,18 @@ def tool09(ctx: ScanContext) -> Iterator[Finding]:
                 f"({H.visible(item.name)!r}, looks like {H.skeleton(item.name)!r}).",
                 location=item.location,
                 key="non-ascii",
+            )
+    definitions: dict[str, set[str]] = {}
+    for item in ctx.mcp.surface:
+        definitions.setdefault(item.location, set()).add(item_hash(item))
+    for loc, hashes in sorted(definitions.items()):
+        if len(hashes) > 1:
+            yield ctx.finding(
+                "MCPP-TOOL09",
+                f"{loc} is listed {len(hashes)} times with different definitions: the client "
+                "picks one, a review or a pin may cover another.",
+                location=loc,
+                key="duplicate",
             )
     by_skeleton: dict[str, list[str]] = {}
     for item in tools:

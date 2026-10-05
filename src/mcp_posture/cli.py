@@ -41,7 +41,14 @@ from mcp_posture.login import (
 )
 from mcp_posture.models import Report, Severity, SpecRevision, TargetResult, ToolInfo
 from mcp_posture.net import Fetcher, HttpExchange, NetSettings
-from mcp_posture.pin import DEFAULT_LOCK, LockError, build_lock, dump_lock, load_lock
+from mcp_posture.pin import (
+    DEFAULT_LOCK,
+    LockError,
+    build_lock,
+    dump_lock,
+    duplicates,
+    load_lock,
+)
 from mcp_posture.redact import RedactingFilter, Redactor
 from mcp_posture.registry import catalogue
 from mcp_posture.report import FORMATS, Format, neutralize, render
@@ -656,7 +663,8 @@ def pin_cmd(
     cfg, _, targets, token = _resolve(
         config, cli_values, urls or [], token_env, token_file, token_stdin
     )
-    _configure_logging(False, Redactor([token] if token else []))
+    redactor = Redactor([token] if token else [])
+    _configure_logging(False, redactor)
     collected = asyncio.run(collect_all(targets, _options(cfg, token)))
     surfaces = {}
     failed = 0
@@ -674,6 +682,12 @@ def pin_cmd(
         else:
             surfaces[c.target.url] = c.ctx.mcp.surface
             err.print(f"[green]pinned[/green] {c.target.url}: {len(c.ctx.mcp.surface)} item(s)")
+            for loc in duplicates(c.ctx.mcp.surface):
+                err.print(
+                    f"[yellow]warning[/yellow] {c.target.url}: {_safe(loc, redactor)} is listed"
+                    " with several definitions; only the first one is pinned, review the others",
+                    highlight=False,
+                )
     if surfaces:
         output.write_text(dump_lock(build_lock(surfaces)), encoding="utf-8")
         err.print(f"wrote {output}")
