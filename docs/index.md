@@ -7,7 +7,7 @@ shadowing, rug pulls). Every finding cites the spec section and the MCP revision
 
 !!! warning "Responsible use"
     Only scan servers you own or are authorized to test. The default passive mode sends a handful
-    of standard requests, but unsolicited scanning of third-party infrastructure may still breach
+    of standard, read-only requests ([listed here](threat-model.md#what-a-passive-scan-sends)), but unsolicited scanning of third-party infrastructure may still breach
     their terms of service or the law.
 
 ```mermaid

@@ -15,7 +15,7 @@ so the corresponding statements are not verified by the scanner today.
 | [2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization) | final | MCP server is an OAuth **resource server**: PRM (RFC 9728) MUST, `WWW-Authenticate` on 401 MUST, RFC 8707 audience MUST, no token passthrough | `MCP-Protocol-Version` header MUST; JSON-RPC batching removed |
 | [2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | final | OIDC Discovery allowed; PRM via challenge **or** well-known; `scope` in challenge SHOULD; step-up via 403 `insufficient_scope`; **CIMD SHOULD**, DCR demoted to MAY; PKCE S256 MUST, OIDC AS MUST publish `code_challenge_methods_supported` | invalid `Origin` → 403 MUST; SSE polling |
 | [2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/index) | **current** | auth split into four pages; DCR **deprecated**; RFC 9207 `iss` SHOULD; AS `issuer` equality MUST; `offline_access` SHOULD NOT be advertised by resources; scope hierarchies MUST | **stateless**: no `initialize`, no `Mcp-Session-Id`, no GET stream; `server/discover`; `Mcp-Method` / `Mcp-Name` headers; HTTP+SSE formally deprecated |
-| draft | — | no normative change from 2026-07-28 at the time of writing | — |
+| draft | n/a | no normative change from 2026-07-28 at the time of writing | n/a |
 
 The scanner detects the revision from the handshake (`server/discover` first, then
 `initialize`), maps `2024-11-05` to `2025-03-26`, and falls back to the latest revision when
