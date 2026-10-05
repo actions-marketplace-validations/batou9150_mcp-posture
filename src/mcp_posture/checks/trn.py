@@ -365,3 +365,42 @@ def trn10(ctx: ScanContext) -> Iterator[Finding]:
                 severity=severity,
                 evidence=[exchange_evidence(ex, "metadata response headers", 0)],
             )
+
+
+@check(
+    id="MCPP-TRN11",
+    title="MCP endpoint redirects",
+    severity=Severity.INFO,
+    references=[R.MCP_TRANSPORT_2026, R.RFC9728],
+    rationale="""The URL users configure is the resource identifier: clients compare it with
+        PRM `resource` and send it as the RFC 8707 `resource` parameter. When the endpoint
+        redirects (often a framework adding a trailing slash), some clients do not follow
+        redirects on POST, and a redirect to another origin drops the bearer token. The scanner
+        follows same-origin 307/308 redirects like a client would, and never follows across
+        origins.""",
+    remediation="""Serve the MCP endpoint at the URL you publish without a redirect (or
+        publish the final URL), and keep PRM `resource` equal to that URL.""",
+)
+def trn11(ctx: ScanContext) -> Iterator[Finding]:
+    hops = ctx.mcp.endpoint_redirects
+    if not hops:
+        return
+    final = hops[-1][1]
+    chain = " -> ".join(f"{status} {url}" for status, url in hops)
+    cross = (
+        urlsplit(final)[:2] != urlsplit(ctx.url)[:2]
+        or urlsplit(final).port != urlsplit(ctx.url).port
+    )
+    if cross:
+        message = (
+            f"The endpoint redirects to another origin ({chain}); not followed, so the scan "
+            "stopped there. Scan the final URL directly if it is yours."
+        )
+    else:
+        message = f"The endpoint redirects ({chain}); the scan followed it."
+    yield ctx.finding(
+        "MCPP-TRN11",
+        message,
+        severity=Severity.LOW if cross else Severity.INFO,
+        evidence=[Evidence(summary="endpoint redirects", excerpt=chain)],
+    )

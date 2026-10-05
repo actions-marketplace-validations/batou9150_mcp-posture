@@ -2173,6 +2173,39 @@
               }
             },
             {
+              "id": "MCPP-TRN11",
+              "name": "McpEndpointRedirects",
+              "shortDescription": {
+                "text": "MCP endpoint redirects"
+              },
+              "fullDescription": {
+                "text": "The URL users configure is the resource identifier: clients compare it with PRM `resource` and send it as the RFC 8707 `resource` parameter. When the endpoint redirects (often a framework adding a trailing slash), some clients do not follow redirects on POST, and a redirect to another origin drops the bearer token. The scanner follows same-origin 307/308 redirects like a client would, and never follows across origins."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-trn11/",
+              "help": {
+                "text": "The URL users configure is the resource identifier: clients compare it with PRM `resource` and send it as the RFC 8707 `resource` parameter. When the endpoint redirects (often a framework adding a trailing slash), some clients do not follow redirects on POST, and a redirect to another origin drops the bearer token. The scanner follows same-origin 307/308 redirects like a client would, and never follows across origins.\n\nRemediation: Serve the MCP endpoint at the URL you publish without a redirect (or publish the final URL), and keep PRM `resource` equal to that URL.",
+                "markdown": "The URL users configure is the resource identifier: clients compare it with PRM `resource` and send it as the RFC 8707 `resource` parameter. When the endpoint redirects (often a framework adding a trailing slash), some clients do not follow redirects on POST, and a redirect to another origin drops the bearer token. The scanner follows same-origin 307/308 redirects like a client would, and never follows across origins.\n\n**Remediation:** Serve the MCP endpoint at the URL you publish without a redirect (or publish the final URL), and keep PRM `resource` equal to that URL.\n\n- [MCP 2026-07-28 Streamable HTTP](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http)\n- [RFC 9728 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728)"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "trn"
+                ],
+                "precision": "high",
+                "security-severity": "0.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
               "id": "MCPP-ERR00",
               "name": "CheckError",
               "shortDescription": {

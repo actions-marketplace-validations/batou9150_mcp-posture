@@ -215,3 +215,43 @@ def test_trn10_reports_a_redirected_metadata_variant_once() -> None:
     )
     findings = run_check("MCPP-TRN10", ctx)
     assert [f.location for f in findings] == [PRM_URL]
+
+
+@pytest.mark.check("positive", "MCPP-TRN11")
+def test_trn11_endpoint_redirect_is_followed_within_the_origin() -> None:
+    """Starlette redirects /mcp to /mcp/ (307); clients follow, so does the scanner."""
+    result = run_scan(McpProfile(path="/mcp/", redirect_from="/mcp", require_auth=False))
+    (finding,) = by_id(result, "MCPP-TRN11")
+    assert finding.severity == Severity.INFO and "/mcp/" in finding.message
+    assert result.transport == "streamable-http"  # probed at the final URL
+    assert "MCPP-AUTHN01" in ids(result)  # and the open tool surface was found there
+
+
+@pytest.mark.check("negative", "MCPP-TRN11")
+def test_trn11_no_redirect() -> None:
+    assert "MCPP-TRN11" not in ids(run_scan(McpProfile()))
+
+
+def test_trn11_cross_origin_redirect_is_not_followed() -> None:
+    from starlette.responses import RedirectResponse as Redirect
+
+    async def elsewhere(request: Request) -> Response:
+        return Redirect("https://other.test/mcp", status_code=307)
+
+    app = Starlette(routes=[Route("/mcp", elsewhere, methods=["POST", "GET", "DELETE"])])
+    seen: list[str] = []
+
+    async def other(request: Request) -> Response:
+        seen.append(request.headers.get("authorization", ""))
+        return Response(status_code=500)
+
+    other_app = Starlette(routes=[Route("/mcp", other, methods=["POST", "GET", "DELETE"])])
+    from tests.fixtures.servers import MCP_HOST, Router
+
+    result = run_scan(
+        transport=lambda: Router({f"https://{MCP_HOST}": app, "https://other.test": other_app}),
+        token="secret-token-0123456789",
+    )
+    (finding,) = by_id(result, "MCPP-TRN11")
+    assert finding.severity == Severity.LOW and "not followed" in finding.message
+    assert seen == []  # nothing, and certainly no token, was sent to the other origin

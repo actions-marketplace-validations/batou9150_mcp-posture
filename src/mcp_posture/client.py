@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field, replace
 from typing import Any
+from urllib.parse import urljoin, urlsplit
 
 from mcp_types.version import HANDSHAKE_PROTOCOL_VERSIONS, LATEST_HANDSHAKE_VERSION
 
@@ -35,6 +36,7 @@ _IDENTITY: dict[str, str] = {
     "resource_template": "uriTemplate",
 }
 SSE_READ_TIMEOUT = 5.0
+MAX_ENDPOINT_REDIRECTS = 3
 SSE_FIELDS = (b"data:", b"event:", b"id:", b":", b"retry:")
 
 LISTS: tuple[tuple[str, str, SurfaceKind, str], ...] = (
@@ -43,6 +45,15 @@ LISTS: tuple[tuple[str, str, SurfaceKind, str], ...] = (
     ("resources/list", "resources", "resource", "resources"),
     ("resources/templates/list", "resourceTemplates", "resource_template", "resources"),
 )
+
+
+def same_origin(a: str, b: str) -> bool:
+    pa, pb = urlsplit(a), urlsplit(b)
+    return (pa.scheme, (pa.hostname or "").lower(), pa.port) == (
+        pb.scheme,
+        (pb.hostname or "").lower(),
+        pb.port,
+    )
 
 
 def parse_rpc_body(ex: HttpExchange, request_id: int | None = None) -> dict[str, Any] | None:
@@ -140,6 +151,7 @@ class McpClient:
     def __init__(self, fetcher: Fetcher, url: str, token: str | None = None) -> None:
         self.fetcher = fetcher
         self.url = url
+        self.origin_url = url
         self.token = token
 
     async def probe(self) -> McpProbe:
@@ -191,18 +203,38 @@ class McpClient:
             body["id"] = rid
         if params is not None:
             body["params"] = params
-        ex = await self.fetcher.request(
-            "POST",
-            self.url,
-            headers=self._headers(st, method, authenticated),
-            json_body=body,
-            follow_redirects=False,
-            stop_when=_sse_has_response(rid) if rid is not None else None,
-            read_timeout=SSE_READ_TIMEOUT,
-        )
+        for _ in range(MAX_ENDPOINT_REDIRECTS + 1):
+            ex = await self.fetcher.request(
+                "POST",
+                self.url,
+                headers=self._headers(st, method, authenticated),
+                json_body=body,
+                follow_redirects=False,
+                stop_when=_sse_has_response(rid) if rid is not None else None,
+                read_timeout=SSE_READ_TIMEOUT,
+            )
+            if not self._follow_endpoint_redirect(st, ex):
+                break
         if ex.status == 401:
             self._record_challenge(st, ex, authenticated)
         return ex, (parse_rpc_body(ex, rid) if rid is not None else None)
+
+    def _follow_endpoint_redirect(self, st: _State, ex: HttpExchange) -> bool:
+        """MCP clients follow a 307/308 on the endpoint (e.g. a framework adding a trailing
+        slash). Follow it too, within the target's origin only: credentials never leave it.
+        Every redirect is recorded for MCPP-TRN11."""
+        location = ex.header("location")
+        if ex.status not in (307, 308) or not location:
+            return False
+        nxt = urljoin(self.url, location)
+        hop = (ex.status, nxt)
+        if hop not in st.probe.endpoint_redirects:
+            st.probe = replace(st.probe, endpoint_redirects=(*st.probe.endpoint_redirects, hop))
+        if not same_origin(nxt, self.origin_url) or nxt == self.url:
+            return False
+        self.url = nxt
+        st.probe = replace(st.probe, endpoint_url=nxt)
+        return True
 
     def _record_challenge(self, st: _State, ex: HttpExchange, authenticated: bool) -> None:
         if authenticated:

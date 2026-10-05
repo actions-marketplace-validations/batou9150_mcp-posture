@@ -8,7 +8,7 @@ First release candidate.
 
 * Passive scanner for remote MCP servers (Streamable HTTP, legacy HTTP+SSE detection), aware of
   MCP revisions 2025-03-26, 2025-06-18, 2025-11-25 and 2026-07-28.
-* Checks: transport (TRN01-10), authentication challenge (AUTHN01-06), Protected Resource
+* Checks: transport (TRN01-11), authentication challenge (AUTHN01-06), Protected Resource
   Metadata (PRM01-11), authorization server metadata (ASM01-13), Client ID Metadata Documents
   (CIMD01-02), scopes (SCP01, SCP02, SCP04), tool surface (TOOL01-10), rug-pull pinning
   (PIN01-04).

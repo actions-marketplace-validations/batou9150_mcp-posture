@@ -85,7 +85,7 @@ medium   MCPP-PRM03   resource '.../mcp/' does not match '.../mcp' (trailing sla
 
 | Family | Checks | Covers |
 |---|---|---|
-| `TRN` | 10 | HTTPS, TLS version and certificate, HTTP→HTTPS, HSTS, legacy SSE, session IDs in URLs, `Mcp-Session-Id` entropy, metadata headers |
+| `TRN` | 11 | HTTPS, TLS version and certificate, HTTP→HTTPS, HSTS, legacy SSE, session IDs in URLs, `Mcp-Session-Id` entropy, metadata headers, endpoint redirects |
 | `AUTHN` | 6 | Anonymous `tools/list`, Bearer challenge, `resource_metadata` discovery, error leakage |
 | `PRM` | 11 | RFC 9728 Protected Resource Metadata: presence, `resource` exact match, authorization servers, query tokens, scopes, signed metadata |
 | `ASM` | 13 | RFC 8414 / OIDC metadata: issuer match, HTTPS endpoints, PKCE S256 / `plain`, implicit and password grants, DCR, `iss` (RFC 9207) |

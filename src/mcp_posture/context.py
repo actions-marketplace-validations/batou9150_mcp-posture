@@ -124,6 +124,9 @@ class McpProbe:
     surface: tuple[SurfaceItem, ...] = ()
     token_rejected: bool = False
     errors: tuple[str, ...] = ()
+    # (status, absolute Location) for each redirect of the MCP endpoint itself.
+    endpoint_redirects: tuple[tuple[int, str], ...] = ()
+    endpoint_url: str | None = None  # where the endpoint was finally reached, if redirected
 
 
 @dataclass(frozen=True)

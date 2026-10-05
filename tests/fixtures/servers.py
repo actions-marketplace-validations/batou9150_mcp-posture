@@ -101,6 +101,7 @@ class McpProfile:
 
     revision: str = "2026-07-28"  # "legacy-sse" for an SSE-only server
     path: str = "/mcp"
+    redirect_from: str | None = None  # 307 from this path to `path` (e.g. "/mcp" -> "/mcp/")
     tools: list[dict[str, Any]] = field(default_factory=lambda: list(SAFE_TOOLS))
     prompts: list[dict[str, Any]] = field(default_factory=lambda: list(SAFE_PROMPTS))
     resources: list[dict[str, Any]] = field(default_factory=lambda: list(SAFE_RESOURCES))
@@ -291,7 +292,15 @@ def mcp_app(profile: McpProfile) -> Starlette:
     async def not_found(request: Request) -> Response:
         return Response(profile.not_found_body, status_code=404, headers=profile.headers)
 
+    async def redirect(request: Request) -> Response:
+        return Response(status_code=307, headers={"location": profile.path})
+
     routes = [
+        *(
+            [Route(profile.redirect_from, redirect, methods=["GET", "POST", "DELETE"])]
+            if profile.redirect_from
+            else []
+        ),
         Route(profile.path, endpoint, methods=["GET", "POST", "DELETE"]),
         Route(
             f"/.well-known/oauth-protected-resource{profile.path}",
