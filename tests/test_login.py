@@ -159,13 +159,18 @@ def test_dcr_keep_client() -> None:
     flow = Flow(auth=AsProfile(metadata=DCR_METADATA))
     flow.run(LoginOptions(register=True, keep_client=True))
     assert flow.seen("unregister") == []
-    assert any("--client-id dcr-1" in m for m in flow.messages)
+    hint = next(m for m in flow.messages if "--client-id dcr-1 --port " in m)
+    port = int(hint.rsplit("--port ", 1)[1])
+    assert flow.seen("register")[0]["redirect_uris"] == [f"http://127.0.0.1:{port}/callback"]
 
 
 def test_dcr_without_management_endpoint_says_so() -> None:
     flow = Flow(auth=AsProfile(metadata=DCR_METADATA, dcr_management=False))
     flow.run(LoginOptions(register=True))
-    assert any("stays on the authorization server" in m for m in flow.messages)
+    assert any(
+        "stays on the authorization server" in m and "--client-id dcr-1 --port" in m
+        for m in flow.messages
+    )
 
 
 def test_dcr_needs_consent() -> None:

@@ -511,7 +511,14 @@ async def _register(
     )
 
 
-async def _unregister(fetcher: Fetcher, server: _Server, client: _Client, ui: LoginUI) -> None:
+def _reuse_hint(client: _Client, port: int) -> str:
+    # The registered redirect URI carries this port, so a reuse must listen on it again.
+    return f"--client-id {client.client_id} --port {port}"
+
+
+async def _unregister(
+    fetcher: Fetcher, server: _Server, client: _Client, ui: LoginUI, port: int
+) -> None:
     uri, token = client.management_uri, client.management_token
     if (
         uri is None
@@ -521,7 +528,8 @@ async def _unregister(fetcher: Fetcher, server: _Server, client: _Client, ui: Lo
     ):
         ui.say(
             f"The registered client {client.client_id} stays on the authorization server "
-            "(no usable RFC 7592 management endpoint); remove it there if you do not need it."
+            "(no usable RFC 7592 management endpoint). Reuse it next time instead of "
+            f"registering another: {_reuse_hint(client, port)}; or remove it there."
         )
         return
     ex = await fetcher.request(
@@ -659,6 +667,7 @@ async def login(
         state = secrets.token_urlsafe(16)
         listener = CallbackServer(state, port)
         await listener.start()
+        port_used = listener.port
         client: _Client | None = None
         try:
             redirect_uri = listener.redirect_uri
@@ -772,11 +781,10 @@ async def login(
             await listener.close()
             if client is not None and client.strategy == "dcr":
                 if opts.keep_client:
-                    ui.say(
-                        f"Kept the registered client: reuse it with --client-id {client.client_id}"
-                    )
+                    hint = _reuse_hint(client, port_used)
+                    ui.say(f"Kept the registered client: reuse it with {hint}")
                 else:
-                    await _unregister(fetcher, server, client, ui)
+                    await _unregister(fetcher, server, client, ui, port_used)
 
 
 _BACKGROUND: set[asyncio.Future[Any]] = set()
