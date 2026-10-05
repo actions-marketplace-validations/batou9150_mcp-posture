@@ -141,3 +141,16 @@ def test_target_timeout_bounds_a_slow_target() -> None:
     result = asyncio.run(scan_target(Target(url=MCP_URL), opts))
     assert not result.reachable
     assert result.error == "scan of this target exceeded 0.3s"
+
+
+def test_plain_http_probe_keeps_ipv6_brackets() -> None:
+    import httpx
+
+    seen: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        return httpx.Response(404)
+
+    run_scan(url="https://[2001:db8::1]:8443/mcp", transport=lambda: httpx.MockTransport(handle))  # type: ignore[arg-type,return-value]
+    assert "http://[2001:db8::1]/mcp" in seen

@@ -142,7 +142,9 @@ async def collect(
     tls: list[TlsProbe] = []
     parts = urlsplit(target.url)
     if parts.scheme == "https":
-        http_url = parts._replace(scheme="http", netloc=parts.hostname or "").geturl()
+        host = parts.hostname or ""
+        netloc = f"[{host}]" if ":" in host else host  # IPv6 literals keep their brackets
+        http_url = parts._replace(scheme="http", netloc=netloc).geturl()
         plain_http.append(await fetcher.request("GET", http_url, follow_redirects=False))
         if options.tls_probe:
             for host, port in _tls_origins(target.url, auth):
