@@ -1,6 +1,6 @@
 {
   "name": "mcp-posture",
-  "version": "1.0.0-rc1",
+  "version": "1.0.0",
   "description": "Security review of remote MCP servers. TRIGGER when the user asks to audit, scan, review, harden or check the security of an MCP server (remote / HTTP / Streamable HTTP), its OAuth or authorization setup, its tools (poisoning, hidden instructions, rug pulls), or a Client ID Metadata Document. Runs the mcp-posture scanner and adds a semantic review and remediation.",
   "author": {
     "name": "Baptiste PIRAULT",
@@ -9,5 +9,12 @@
   "homepage": "https://github.com/batou9150/mcp-posture",
   "repository": "https://github.com/batou9150/mcp-posture",
   "license": "MIT",
-  "keywords": ["mcp", "security", "oauth", "scanner", "sarif", "prompt-injection"]
+  "keywords": [
+    "mcp",
+    "security",
+    "oauth",
+    "scanner",
+    "sarif",
+    "prompt-injection"
+  ]
 }

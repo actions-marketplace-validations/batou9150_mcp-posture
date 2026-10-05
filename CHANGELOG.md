@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/batou9150/mcp-posture/compare/v1.0.0-rc1...v1.0.0) (2026-10-05)
+
+
+### Documentation
+
+* install from PyPI and GHCR ([5d18acc](https://github.com/batou9150/mcp-posture/commit/5d18accb1de2f538ab302d19b91a396ffc26d954))
+
 ## [1.0.0-rc1](https://github.com/batou9150/mcp-posture/releases/tag/v1.0.0-rc1) (2026-10-05)
 
 First release candidate.
