@@ -28,6 +28,12 @@ tls_probe = true                     # extra TLS handshakes (legacy versions, ce
 baseline = "mcp-posture.lock.json"
 ignore_file = ".mcp-posture-ignore"
 sarif_anchor = "mcp-posture.toml"    # repo file SARIF results point to by default
+
+[login]                              # `login` and `scan --login`; never secrets
+client_id = "mcp-posture-local"      # pre-registered client (or client_metadata_url)
+scope = "notes:read"
+port = 0                             # loopback redirect port, 0 = ephemeral
+register = false                     # allow Dynamic Client Registration without asking
 ```
 
 ## Suppressions: `.mcp-posture-ignore`

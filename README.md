@@ -36,7 +36,9 @@ mcp-posture cimd lint https://app.example.com/oauth/client.json
 mcp-posture discover
 mcp-posture scan --from-client-config auto
 
-# list tools behind authentication: pass a token through the environment, never on the command line
+# list tools behind authentication: log in to your own server in the browser (token never shown)
+mcp-posture scan https://mcp.example.com/mcp --login
+# ... or pass a token through the environment, never on the command line
 MCP_TOKEN=... mcp-posture scan https://mcp.example.com/mcp --token-env MCP_TOKEN
 ```
 

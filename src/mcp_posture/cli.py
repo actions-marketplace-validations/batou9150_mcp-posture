@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
+import secrets
+import stat
 import sys
+import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
@@ -13,18 +17,34 @@ from urllib.parse import urlsplit
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 
 from mcp_posture import __version__
 from mcp_posture.cimd_lint import LintInput, lint, parse_document
 from mcp_posture.config import ConfigError, ScanConfig, build_config, load_config
 from mcp_posture.context import Target
-from mcp_posture.engine import EXIT_USAGE, ScanOptions, collect_all, exit_code, scan
+from mcp_posture.engine import (
+    EXIT_UNREACHABLE,
+    EXIT_USAGE,
+    ScanOptions,
+    collect_all,
+    exit_code,
+    scan,
+)
+from mcp_posture.login import (
+    LoginError,
+    LoginNotRequired,
+    LoginOptions,
+    LoginResult,
+    LoginUI,
+    login,
+)
 from mcp_posture.models import Report, Severity, SpecRevision, TargetResult, ToolInfo
 from mcp_posture.net import Fetcher, HttpExchange, NetSettings
 from mcp_posture.pin import DEFAULT_LOCK, LockError, build_lock, dump_lock, load_lock
 from mcp_posture.redact import RedactingFilter, Redactor
 from mcp_posture.registry import catalogue
-from mcp_posture.report import FORMATS, Format, render
+from mcp_posture.report import FORMATS, Format, neutralize, render
 from mcp_posture.report.sarif import DEFAULT_ANCHOR, Anchor
 from mcp_posture.sources import SourceError, discover, line_of, source_file
 from mcp_posture.suppress import (
@@ -49,6 +69,7 @@ app.add_typer(cimd_app, name="cimd")
 
 err = Console(stderr=True, soft_wrap=True)
 CIMD_FETCH_LIMIT = 64 * 1024
+EXIT_LOGIN_FAILED = 4
 
 
 class UsageError(Exception):
@@ -185,6 +206,115 @@ def _configure_logging(verbose: bool, redactor: Redactor) -> None:
     root.propagate = False
 
 
+def _login_options(
+    cfg: ScanConfig,
+    *,
+    client_id: str | None,
+    client_secret_env: str | None,
+    client_metadata_url: str | None,
+    register: bool | None,
+    keep_client: bool,
+    scope: str | None,
+    port: int | None,
+    no_browser: bool,
+    login_timeout: float | None,
+    authorization_server: str | None,
+) -> LoginOptions:
+    """[login] from the config file, overridden by explicit CLI values."""
+    base = cfg.login
+    secret = None
+    if client_secret_env:
+        secret = os.environ.get(client_secret_env)
+        if not secret:
+            raise UsageError(f"environment variable {client_secret_env} is empty or unset")
+    return LoginOptions(
+        client_id=client_id or base.client_id,
+        client_secret=secret,
+        client_metadata_url=client_metadata_url or base.client_metadata_url,
+        register=register if register is not None else base.allow_registration,
+        keep_client=keep_client or base.keep_client,
+        scope=scope or base.scope,
+        port=port if port is not None else base.port,
+        open_browser=not no_browser,
+        timeout=login_timeout or base.timeout,
+        authorization_server=authorization_server or base.authorization_server,
+    )
+
+
+def _safe(text: str, redactor: Redactor) -> str:
+    """Server-influenced text for the terminal: secrets masked, no control/escape sequences
+    (rich passes ESC through even with markup off), no rich markup."""
+    return escape(neutralize(redactor.redact(text), json_escapes=False))
+
+
+def _ui(redactor: Redactor) -> LoginUI:
+    def say(message: str) -> None:
+        err.print(_safe(message, redactor), highlight=False)
+
+    def confirm(question: str) -> bool:
+        return typer.confirm(question, default=False, err=True)
+
+    interactive = sys.stdin.isatty()
+    return LoginUI(say=say, open_url=webbrowser.open, confirm=confirm if interactive else None)
+
+
+def run_login(url: str, opts: LoginOptions, net: NetSettings, redactor: Redactor) -> LoginResult:
+    return asyncio.run(login(url, opts, net, _ui(redactor), redactor=redactor))
+
+
+def _stdout_is_tty() -> bool:
+    return sys.stdout.isatty()
+
+
+def write_token_file(path: Path, token: str) -> None:
+    """Write ``token`` readable by the owner only; never through a symlink."""
+    data = (token + "\n").encode()
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        st = os.lstat(path)
+    except FileNotFoundError:
+        try:
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow, 0o600)
+        except OSError as e:
+            raise UsageError(f"cannot create {path}: {e.strerror}") from e
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(data)
+        except OSError as e:
+            with contextlib.suppress(OSError):
+                path.unlink()
+            raise UsageError(f"cannot write {path}: {e.strerror}") from e
+        return
+    if not stat.S_ISREG(st.st_mode):
+        raise UsageError(f"{path} is not a regular file (symlinks are refused)")
+    if st.st_mode & 0o077 or (hasattr(os, "getuid") and st.st_uid != os.getuid()):
+        mode = stat.S_IMODE(st.st_mode)
+        raise UsageError(f"{path} already exists with mode {mode:o}; it must be 600 and yours")
+    tmp = path.with_name(f".{path.name}.{secrets.token_hex(4)}.tmp")
+    try:
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except OSError as e:
+        with contextlib.suppress(OSError):
+            tmp.unlink()  # never leave a stray copy of the token behind
+        raise UsageError(f"cannot write {path}: {e.strerror}") from e
+
+
+def _report_login(result: LoginResult, redactor: Redactor) -> None:
+    for w in result.warnings:
+        err.print(f"[yellow]warning:[/yellow] {_safe(w, redactor)}", highlight=False)
+    err.print(
+        f"Logged in to {_safe(result.issuer, redactor)} (client: {result.strategy}"
+        + (f", scope: {_safe(result.scope, redactor)}" if result.scope else "")
+        + "). The token is not shown.",
+        highlight=False,
+    )
+
+
 ConfigOpt = Annotated[
     Path | None, typer.Option("--config", help="Config file (default: ./mcp-posture.toml).")
 ]
@@ -210,6 +340,79 @@ TokenStdinOpt = Annotated[
 ]
 AllowPrivateOpt = Annotated[
     bool, typer.Option("--allow-private", help="Allow loopback/private/link-local addresses.")
+]
+LOGIN_PANEL = "Login (OAuth to a server you own)"
+ClientIdOpt = Annotated[
+    str | None,
+    typer.Option("--client-id", help="Pre-registered client ID.", rich_help_panel=LOGIN_PANEL),
+]
+ClientSecretEnvOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--client-secret-env",
+        help="Env var holding the secret of a pre-registered confidential client.",
+        rich_help_panel=LOGIN_PANEL,
+    ),
+]
+ClientMetadataUrlOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--client-metadata-url",
+        help="HTTPS URL of your Client ID Metadata Document (CIMD).",
+        rich_help_panel=LOGIN_PANEL,
+    ),
+]
+RegisterOpt = Annotated[
+    bool | None,
+    typer.Option(
+        "--register/--no-register",
+        help="Allow Dynamic Client Registration (creates a client on the AS). Asks if unset.",
+        rich_help_panel=LOGIN_PANEL,
+    ),
+]
+KeepClientOpt = Annotated[
+    bool,
+    typer.Option(
+        "--keep-client", help="Keep a DCR-registered client.", rich_help_panel=LOGIN_PANEL
+    ),
+]
+ScopeOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--scope", help="Scopes to request (space-separated).", rich_help_panel=LOGIN_PANEL
+    ),
+]
+PortOpt = Annotated[
+    int | None,
+    typer.Option(
+        "--port",
+        min=0,
+        max=65535,
+        help="Loopback port for the redirect [ephemeral].",
+        rich_help_panel=LOGIN_PANEL,
+    ),
+]
+NoBrowserOpt = Annotated[
+    bool,
+    typer.Option(
+        "--no-browser", help="Print the authorization URL instead.", rich_help_panel=LOGIN_PANEL
+    ),
+]
+LoginTimeoutOpt = Annotated[
+    float | None,
+    typer.Option(
+        "--login-timeout",
+        help="Seconds to wait for the redirect [300].",
+        rich_help_panel=LOGIN_PANEL,
+    ),
+]
+AuthServerOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--authorization-server",
+        help="Which authorization server, when PRM lists several.",
+        rich_help_panel=LOGIN_PANEL,
+    ),
 ]
 
 
@@ -310,6 +513,24 @@ def scan_cmd(
         bool, typer.Option("--no-timestamp", help="Omit generated_at for reproducible output.")
     ] = False,
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
+    do_login: Annotated[
+        bool,
+        typer.Option(
+            "--login",
+            help="Log in first (browser, OAuth + PKCE) and scan with that token; one target.",
+            rich_help_panel=LOGIN_PANEL,
+        ),
+    ] = False,
+    client_id: ClientIdOpt = None,
+    client_secret_env: ClientSecretEnvOpt = None,
+    client_metadata_url: ClientMetadataUrlOpt = None,
+    register: RegisterOpt = None,
+    keep_client: KeepClientOpt = False,
+    scope: ScopeOpt = None,
+    port: PortOpt = None,
+    no_browser: NoBrowserOpt = False,
+    login_timeout: LoginTimeoutOpt = None,
+    authorization_server: AuthServerOpt = None,
 ) -> None:
     """Scan remote MCP servers (passive: metadata GETs + standard MCP handshake)."""
     if fmt not in FORMATS:
@@ -345,6 +566,38 @@ def scan_cmd(
 
     redactor = Redactor([token] if token else [])
     _configure_logging(verbose, redactor)
+    if do_login:
+        if token is not None:
+            raise _fail_usage("--login and --token-env/--token-file/--token-stdin are exclusive")
+        if len(targets) != 1:
+            raise _fail_usage("--login scans exactly one target")
+        try:
+            login_opts = _login_options(
+                cfg,
+                client_id=client_id,
+                client_secret_env=client_secret_env,
+                client_metadata_url=client_metadata_url,
+                register=register,
+                keep_client=keep_client,
+                scope=scope,
+                port=port,
+                no_browser=no_browser,
+                login_timeout=login_timeout,
+                authorization_server=authorization_server,
+            )
+        except UsageError as e:
+            raise _fail_usage(str(e)) from None
+        try:
+            result = run_login(targets[0].url, login_opts, _options(cfg, None).net, redactor)
+        except LoginNotRequired:
+            err.print("This server does not require authentication; scanning without a token.")
+        except LoginError as e:
+            err.print(f"[red]login failed:[/red] {_safe(str(e), redactor)}", highlight=False)
+            raise typer.Exit(EXIT_UNREACHABLE if e.unreachable else EXIT_LOGIN_FAILED) from None
+        else:
+            _report_login(result, redactor)
+            token = result.access_token
+            redactor.add(token)
     options = _options(cfg, token, baseline=lock, suppressions=tuple(suppressions))
     generated_at = None if no_timestamp else datetime.now(UTC).replace(microsecond=0)
     report = asyncio.run(scan(targets, options, generated_at=generated_at))
@@ -570,6 +823,93 @@ def checks_show(
     out.print(f"[bold]Fix[/bold]\n{meta.remediation}\n")
     for ref in meta.references:
         out.print(f"- {ref.title}: {ref.url}")
+
+
+@app.command("login")
+def login_cmd(
+    url: Annotated[str, typer.Argument(help="MCP endpoint URL (a server you own).")],
+    token_file: Annotated[
+        Path | None,
+        typer.Option("--token-file", help="Write the access token here (mode 600)."),
+    ] = None,
+    show_token: Annotated[
+        bool, typer.Option("--show-token", help="Allow printing the token to a terminal.")
+    ] = False,
+    config: ConfigOpt = None,
+    client_id: ClientIdOpt = None,
+    client_secret_env: ClientSecretEnvOpt = None,
+    client_metadata_url: ClientMetadataUrlOpt = None,
+    register: RegisterOpt = None,
+    keep_client: KeepClientOpt = False,
+    scope: ScopeOpt = None,
+    port: PortOpt = None,
+    no_browser: NoBrowserOpt = False,
+    login_timeout: LoginTimeoutOpt = None,
+    authorization_server: AuthServerOpt = None,
+    allow_private: AllowPrivateOpt = False,
+    ca_bundle: Annotated[
+        Path | None, typer.Option("--ca-bundle", help="Custom CA bundle (PEM).")
+    ] = None,
+    proxy: Annotated[str | None, typer.Option("--proxy", help="HTTP(S) proxy URL.")] = None,
+    timeout: Annotated[
+        float | None, typer.Option("--timeout", help="Per-request timeout in s [10].")
+    ] = None,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
+) -> None:
+    """Log in to an MCP server you own (OAuth code flow + PKCE) and output an access token.
+
+    The token goes to stdout only when it is captured, e.g.
+    export MCP_TOKEN="$(mcp-posture login URL)", or to --token-file.
+    """
+    if token_file is None and not show_token and _stdout_is_tty():
+        raise _fail_usage(
+            "refusing to print a token to the terminal. Capture it instead: "
+            'export MCP_TOKEN="$(mcp-posture login URL)", or use --token-file PATH '
+            "(or --show-token)"
+        )
+    cli_values: dict[str, Any] = {
+        "allow_private": True if allow_private else None,
+        "ca_bundle": str(ca_bundle) if ca_bundle else None,
+        "proxy": proxy,
+        "timeout": timeout,
+        "tls_probe": False,
+    }
+    cfg, _, _targets, _ = _resolve(config, cli_values, [url], None, None, False)
+    try:
+        opts = _login_options(
+            cfg,
+            client_id=client_id,
+            client_secret_env=client_secret_env,
+            client_metadata_url=client_metadata_url,
+            register=register,
+            keep_client=keep_client,
+            scope=scope,
+            port=port,
+            no_browser=no_browser,
+            login_timeout=login_timeout,
+            authorization_server=authorization_server,
+        )
+    except UsageError as e:
+        raise _fail_usage(str(e)) from None
+    redactor = Redactor()
+    _configure_logging(verbose, redactor)
+    try:
+        result = run_login(url, opts, _options(cfg, None).net, redactor)
+    except LoginNotRequired:
+        err.print("This server does not require authentication; no token needed.")
+        raise typer.Exit(0) from None
+    except LoginError as e:
+        err.print(f"[red]login failed:[/red] {_safe(str(e), redactor)}", highlight=False)
+        raise typer.Exit(EXIT_UNREACHABLE if e.unreachable else 1) from None
+    _report_login(result, redactor)
+    if token_file is not None:
+        try:
+            write_token_file(token_file, result.access_token)
+        except UsageError as e:
+            raise _fail_usage(str(e)) from None
+        err.print(f"Token written to {token_file}.", highlight=False)
+    else:
+        sys.stdout.write(result.access_token + "\n")
 
 
 @app.command("version")

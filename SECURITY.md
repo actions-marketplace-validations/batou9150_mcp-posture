@@ -22,6 +22,8 @@ In scope, because the scanner talks to servers that may be hostile:
 - Report injection: server-controlled text that reaches a terminal, Markdown summary or SARIF
   output with control, bidi or invisible characters intact.
 - Resource exhaustion: a response that makes the scanner hang or use unbounded memory.
+- `mcp-posture login`: the loopback callback listener, the URL opened in the browser, token
+  output (terminal, files), and client registration cleanup.
 - The GitHub Action: script injection through inputs, or token exposure.
 - Release artifacts: anything that breaks provenance, signatures or the SBOM.
 

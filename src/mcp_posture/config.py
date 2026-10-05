@@ -30,6 +30,21 @@ class ConfigError(Exception):
     pass
 
 
+class LoginConfig(BaseModel):
+    """``[login]`` in mcp-posture.toml. Secrets are never read from the config file."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
+
+    client_id: str | None = None
+    client_metadata_url: str | None = None
+    authorization_server: str | None = None
+    scope: str | None = None
+    port: int = Field(0, ge=0, le=65535)
+    allow_registration: bool | None = Field(None, alias="register")  # TOML key: register
+    keep_client: bool = False
+    timeout: float = Field(300.0, gt=0, le=3600)
+
+
 class ScanConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -54,6 +69,7 @@ class ScanConfig(BaseModel):
     baseline: str | None = None
     ignore_file: str | None = None
     sarif_anchor: str | None = None
+    login: LoginConfig = LoginConfig()
 
     @field_validator("spec")
     @classmethod
@@ -71,6 +87,7 @@ class ScanConfig(BaseModel):
 class _File(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scan: dict[str, Any] = {}
+    login: dict[str, Any] = {}
 
 
 def _format(e: ValidationError, source: str) -> str:
@@ -92,9 +109,12 @@ def load_config(path: Path | None, cwd: Path) -> tuple[dict[str, Any], Path | No
     except tomllib.TOMLDecodeError as e:
         raise ConfigError(f"{path}: invalid TOML: {e}") from e
     try:
-        raw = _File.model_validate(data).scan
+        parsed = _File.model_validate(data)
     except ValidationError as e:
         raise ConfigError(_format(e, str(path))) from e
+    raw = dict(parsed.scan)
+    if parsed.login:
+        raw["login"] = parsed.login
     base = path.parent
     for key in PATH_FIELDS:
         if isinstance(raw.get(key), str):

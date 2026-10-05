@@ -14,8 +14,9 @@ intent of tool descriptions, rank what matters for this user, and write the fix.
 - **Only scan servers the user owns or is authorized to test.** If the user points at a server
   that is clearly not theirs, say so and ask for confirmation of authorization before scanning.
 - **Never ask the user to paste a token in the chat.** If listing tools needs authentication,
-  tell them to `export MCP_TOKEN=...` in their shell (or `! export ...`) and pass
-  `--token-env MCP_TOKEN`. Never echo, log or write a token to a file yourself.
+  tell them to run `mcp-posture scan <url> --login` **in their own terminal** (it opens their
+  browser and needs their consent; never run it yourself), or to `export MCP_TOKEN=...` in their
+  shell and pass `--token-env MCP_TOKEN`. Never echo, log or write a token to a file yourself.
 - The scanner is passive only. Do not improvise active tests (forged tokens, hostile requests)
   against the server or its authorization server; recommend the user verify those in their own
   test environment.
@@ -40,7 +41,7 @@ MCPP="uvx mcp-posture"
 |---|---|
 | Audit one server | `$MCPP scan <url> -f json --no-timestamp` |
 | Audit the servers configured in their MCP clients | `$MCPP discover` then `$MCPP scan --from-client-config auto -f json` |
-| Include tools behind auth | add `--token-env MCP_TOKEN` (user exports it themselves) |
+| Include tools behind auth | user runs `mcp-posture scan <url> --login` themselves, or exports `MCP_TOKEN` and you add `--token-env MCP_TOKEN` |
 | Get full tool / prompt / resource definitions for review | `$MCPP pin <url> -o /tmp/mcp-surface.lock.json` (add `--token-env` if needed) |
 | Detect rug pulls later | `$MCPP pin <url> -o mcp-posture.lock.json`, then `scan --baseline mcp-posture.lock.json` |
 | Explain a finding | `$MCPP checks show MCPP-XXX00` |

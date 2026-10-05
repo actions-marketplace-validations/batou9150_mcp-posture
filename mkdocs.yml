@@ -50,6 +50,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Configuration: configuration.md
+  - Log in (OAuth): login.md
   - CI integration: ci.md
   - Client metadata lint: cimd-lint.md
   - Checks: checks/index.md

@@ -41,6 +41,10 @@ export MCP_TOKEN=...   # e.g. from your secret manager
 mcp-posture scan https://mcp.example.com/mcp --token-env MCP_TOKEN
 ```
 
+For your own server, `--login` runs the OAuth flow in your browser and scans with the token
+without showing it: `mcp-posture scan https://mcp.example.com/mcp --login`. See
+[Log in](login.md).
+
 ## Read the results
 
 Each finding has a stable ID (`MCPP-ASM04`), a severity, a confidence, the location (URL, issuer

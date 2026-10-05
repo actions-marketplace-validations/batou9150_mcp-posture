@@ -6,13 +6,15 @@ defaults to the *secure* behaviour; misconfigured fixtures flip one knob at a ti
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import itertools
 import json
 import secrets
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import httpx
 from starlette.applications import Starlette
@@ -26,6 +28,7 @@ MCP_URL = f"https://{MCP_HOST}/mcp"
 ISSUER = f"https://{AS_HOST}"
 PRM_URL = f"https://{MCP_HOST}/.well-known/oauth-protected-resource/mcp"
 GOOD_TOKEN = "good-token-0123456789abcdef"
+PRE_CLIENT = "pre-registered-client"
 
 SAFE_TOOLS: list[dict[str, Any]] = [
     {
@@ -131,6 +134,15 @@ class AsProfile:
     metadata: dict[str, Any] | None = field(default_factory=secure_as_metadata)
     variant: str = "rfc8414"  # rfc8414 | oidc-insert | oidc-append
     headers: dict[str, str] = field(default_factory=lambda: dict(SECURE_HEADERS))
+    # Login flow (authorize auto-consents; the test plays the browser).
+    pre_registered: frozenset[str] = frozenset({PRE_CLIENT})  # any loopback port
+    deny: bool = False
+    iss_mode: str = "correct"  # correct | missing | wrong
+    token_type: str = "Bearer"
+    jwt_aud: str | None = None  # issue a JWT with this aud instead of an opaque token
+    dcr_secret: bool = False
+    dcr_management: bool = True
+    log: list[tuple[str, Any]] = field(default_factory=list)  # what the AS saw, for tests
 
 
 def _json(data: Any, status: int = 200, headers: dict[str, str] | None = None) -> Response:
@@ -317,6 +329,10 @@ def mcp_app(profile: McpProfile) -> Starlette:
     return Starlette(routes=routes)
 
 
+def _b64json(data: dict[str, Any]) -> str:
+    return base64.urlsafe_b64encode(json.dumps(data).encode()).rstrip(b"=").decode()
+
+
 def as_app(profile: AsProfile) -> Starlette:
     issuer_path = urlsplit(profile.issuer).path.rstrip("/")
     paths = {
@@ -333,8 +349,104 @@ def as_app(profile: AsProfile) -> Starlette:
     async def not_found(request: Request) -> Response:
         return _json({"error": "not found"}, 404)
 
+    clients: dict[str, dict[str, Any]] = {}
+    codes: dict[str, dict[str, str]] = {}
+
+    def redirect_allowed(client_id: str, redirect_uri: str) -> bool:
+        if client_id in clients:
+            return redirect_uri in clients[client_id]["redirect_uris"]
+        if client_id in profile.pre_registered:
+            return urlsplit(redirect_uri).hostname == "127.0.0.1"  # RFC 8252: any port
+        return client_id.startswith("https://")  # CIMD (the document is not fetched here)
+
+    async def authorize(request: Request) -> Response:
+        q = dict(request.query_params)
+        profile.log.append(("authorize", q))
+        client_id, redirect_uri = q.get("client_id", ""), q.get("redirect_uri", "")
+        if not redirect_allowed(client_id, redirect_uri):
+            return PlainTextResponse("invalid redirect_uri", status_code=400)
+        params: dict[str, str] = {"state": q.get("state", "")}
+        if profile.deny:
+            params |= {"error": "access_denied", "error_description": "The user said no"}
+        elif q.get("code_challenge_method") != "S256" or not q.get("code_challenge"):
+            params |= {"error": "invalid_request"}
+        else:
+            code = secrets.token_urlsafe(12)
+            codes[code] = q
+            params["code"] = code
+        if profile.iss_mode == "correct":
+            params["iss"] = profile.issuer
+        elif profile.iss_mode == "wrong":
+            params["iss"] = "https://evil.test"
+        return Response(
+            status_code=302, headers={"location": f"{redirect_uri}?{urlencode(params)}"}
+        )
+
+    async def token(request: Request) -> Response:
+        form = {k: v[0] for k, v in parse_qs((await request.body()).decode()).items()}
+        profile.log.append(("token", form))
+        grant = codes.pop(form.get("code", ""), None)
+        verifier = form.get("code_verifier", "")
+        challenge = (
+            base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+            .rstrip(b"=")
+            .decode()
+        )
+        if (
+            grant is None
+            or grant["code_challenge"] != challenge
+            or grant["redirect_uri"] != form.get("redirect_uri")
+            or grant["client_id"] != form.get("client_id")
+        ):
+            return _json({"error": "invalid_grant", "error_description": "bad code"}, 400)
+        access = GOOD_TOKEN
+        if profile.jwt_aud is not None:
+            access = f"{_b64json({'alg': 'none'})}.{_b64json({'aud': profile.jwt_aud})}.sig"
+        return _json(
+            {
+                "access_token": access,
+                "token_type": profile.token_type,
+                "expires_in": 3600,
+                "refresh_token": "refresh-token-never-stored-0123",
+                "scope": grant.get("scope", ""),
+            }
+        )
+
+    async def register(request: Request) -> Response:
+        body = json.loads(await request.body())
+        profile.log.append(("register", body))
+        client_id = f"dcr-{len(clients) + 1}"
+        clients[client_id] = body
+        out: dict[str, Any] = {"client_id": client_id, **body}
+        if profile.dcr_secret:
+            out |= {
+                "client_secret": "dcr-secret-0123456789",
+                "token_endpoint_auth_method": ("client_secret_basic"),
+            }
+        if profile.dcr_management:
+            out |= {
+                "registration_client_uri": f"{profile.issuer}/register/{client_id}",
+                "registration_access_token": "reg-token-0123456789abcdef",
+            }
+        return _json(out, 201)
+
+    async def unregister(request: Request) -> Response:
+        client_id = request.path_params["client_id"]
+        ok = request.headers.get("authorization") == "Bearer reg-token-0123456789abcdef"
+        profile.log.append(("unregister", client_id))
+        if not ok or clients.pop(client_id, None) is None:
+            return Response(status_code=401)
+        return Response(status_code=204)
+
     return Starlette(
-        routes=[Route(paths[profile.variant], metadata), Route("/{path:path}", not_found)]
+        routes=[
+            Route(paths[profile.variant], metadata),
+            Route("/authorize", authorize),
+            Route("/token", token, methods=["POST"]),
+            Route("/register", register, methods=["POST"]),
+            Route("/register/{client_id}", unregister, methods=["DELETE"]),
+            Route("/{path:path}", not_found),
+        ]
     )
 
 

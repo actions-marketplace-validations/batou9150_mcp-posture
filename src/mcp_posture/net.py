@@ -22,7 +22,7 @@ import warnings
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlencode, urljoin, urlsplit
 
 import httpcore
 import httpx
@@ -274,6 +274,13 @@ def build_ssl_context(ca_bundle: str | None) -> ssl.SSLContext:
 StopFn = Callable[[bytes], bool]
 
 
+@dataclass(frozen=True)
+class _Form:
+    """An application/x-www-form-urlencoded body (OAuth token requests)."""
+
+    fields: Mapping[str, str]
+
+
 class Fetcher:
     """Single entry point for network I/O during a scan. Records every exchange."""
 
@@ -310,6 +317,7 @@ class Fetcher:
         *,
         headers: Mapping[str, str] | None = None,
         json_body: Any = None,
+        form: Mapping[str, str] | None = None,
         follow_redirects: bool = True,
         max_bytes: int | None = None,
         stop_when: StopFn | None = None,
@@ -319,7 +327,7 @@ class Fetcher:
         hops: list[tuple[int, str]] = []
         current_url = url
         current_method = method.upper()
-        body = json_body
+        body: Any = _Form(form) if form is not None else json_body
         hdrs = dict(headers or {})
         start_origin = _origin(url)
         exchange: HttpExchange | None = None
@@ -397,10 +405,14 @@ class Fetcher:
         read_timeout: float | None,
     ) -> HttpExchange:
         limit = max_bytes or self.settings.max_bytes
-        content = None if json_body is None else json.dumps(json_body).encode()
         req_headers = dict(headers)
-        if content is not None:
-            req_headers.setdefault("Content-Type", "application/json")
+        if isinstance(json_body, _Form):
+            content: bytes | None = urlencode(json_body.fields).encode()
+            req_headers.setdefault("Content-Type", "application/x-www-form-urlencoded")
+        else:
+            content = None if json_body is None else json.dumps(json_body).encode()
+            if content is not None:
+                req_headers.setdefault("Content-Type", "application/json")
         started = time.monotonic()
         req_tuple = tuple((k.lower(), v) for k, v in req_headers.items())
         req_body = content.decode() if content is not None else None
