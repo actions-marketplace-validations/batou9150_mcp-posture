@@ -90,6 +90,11 @@ def visible(text: str) -> str:
 
 # --- instruction-like phrases -----------------------------------------------------------
 
+_SILENT_ACTIONS = (
+    r"(?:send|upload|forward|transmit|post|share|exfiltrat|cop(?:y|ie)|attach|include|"
+    r"append|read|access|fetch|collect|call|invoke|run|execut|install|modify|chang|delet|remov|"
+    r"overwrit|grant)"
+)
 _INSTRUCTIONS: tuple[tuple[str, str], ...] = (
     (
         "override",
@@ -101,7 +106,14 @@ _INSTRUCTIONS: tuple[tuple[str, str], ...] = (
     ),
     (
         "secrecy",
-        r"\b(secretly|silently|covertly|without (the )?(user|human)('s)? (knowing|knowledge|consent|noticing))",
+        # "silently" alone is common API prose ("unknown IDs are silently ignored"): it only
+        # counts next to an action that moves or touches data.
+        r"\b(secretly|covertly|without (the )?(user|human)('s)? (knowing|knowledge|consent|noticing))"
+        r"|\bsilently\s+(?:\w+\s+){0,2}?"
+        + _SILENT_ACTIONS
+        + r"|\b"
+        + _SILENT_ACTIONS
+        + r"\w*\s+(?:\S+\s+){0,4}?silently\b",
     ),
     (
         "ordering",
