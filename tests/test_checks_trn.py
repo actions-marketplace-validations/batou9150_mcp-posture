@@ -187,3 +187,31 @@ def test_trn10_weak_metadata_headers() -> None:
 @pytest.mark.check("negative", "MCPP-TRN10")
 def test_trn10_secure_metadata_headers() -> None:
     assert "MCPP-TRN10" not in ids(run_scan(McpProfile()))
+
+
+def test_trn10_reports_a_redirected_metadata_variant_once() -> None:
+    """The root PRM redirecting to the path-inserted one is one document, one finding."""
+    from mcp_posture.context import AuthDiscovery, MetadataFetch, freeze
+    from mcp_posture.net import HttpExchange
+    from tests.conftest import make_ctx, run_check
+    from tests.fixtures.servers import PRM_URL, secure_prm
+
+    root = PRM_URL.replace("/oauth-protected-resource/mcp", "/oauth-protected-resource")
+    headers = (("content-type", "application/json"),)
+
+    def fetch(variant: str, url: str, redirects: tuple[tuple[int, str], ...]) -> MetadataFetch:
+        ex = HttpExchange(
+            "GET", url, status=200, headers=headers, redirects=redirects, final_url=PRM_URL
+        )
+        return MetadataFetch(variant, url, ex, freeze(secure_prm()))
+
+    ctx = make_ctx(
+        auth=AuthDiscovery(
+            prm_fetches=(
+                fetch("path-insertion", PRM_URL, ()),
+                fetch("root", root, ((302, PRM_URL),)),
+            )
+        )
+    )
+    findings = run_check("MCPP-TRN10", ctx)
+    assert [f.location for f in findings] == [PRM_URL]

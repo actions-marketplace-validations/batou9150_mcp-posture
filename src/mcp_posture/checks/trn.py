@@ -339,8 +339,15 @@ def trn10(ctx: ScanContext) -> Iterator[Finding]:
     docs = [f for f in ctx.auth.prm_fetches if f.found]
     for s in ctx.auth.authorization_servers:
         docs.extend(f for f in s.fetches if f.found)
+    seen: set[str] = set()
     for f in docs:
         ex = f.exchange
+        # Headers are those of the final response: a redirecting variant (e.g. the root PRM
+        # redirecting to the path-inserted one) is the same document, reported once.
+        url = ex.final_url or f.url
+        if url in seen:
+            continue
+        seen.add(url)
         problems = []
         if (ex.header("x-content-type-options") or "").lower() != "nosniff":
             problems.append("missing X-Content-Type-Options: nosniff")
@@ -353,8 +360,8 @@ def trn10(ctx: ScanContext) -> Iterator[Finding]:
         if problems:
             yield ctx.finding(
                 "MCPP-TRN10",
-                f"{f.url}: {'; '.join(problems)}.",
-                location=f.url,
+                f"{url}: {'; '.join(problems)}.",
+                location=url,
                 severity=severity,
                 evidence=[exchange_evidence(ex, "metadata response headers", 0)],
             )
