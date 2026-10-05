@@ -15,6 +15,7 @@ spec = "auto"                        # or 2025-03-26 | 2025-06-18 | 2025-11-25 |
 enable = []                          # check IDs or families, e.g. ["PRM", "ASM04"]
 disable = ["ASM08"]
 timeout = 10                         # seconds per request
+target_timeout = 300                 # seconds for everything about one target
 retries = 2                          # idempotent requests only, exponential backoff
 backoff = 0.5
 max_bytes = 1048576                  # response body cap

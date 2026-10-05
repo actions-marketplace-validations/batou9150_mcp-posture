@@ -8,7 +8,7 @@ from typing import Any
 
 from mcp_posture import heuristics as H
 from mcp_posture.checks import _refs as R
-from mcp_posture.context import ScanContext, SurfaceItem, thaw
+from mcp_posture.context import MAX_JSON_DEPTH, TRUNCATED, ScanContext, SurfaceItem, thaw
 from mcp_posture.models import Confidence, Evidence, Finding, Severity
 from mcp_posture.registry import check
 from mcp_posture.surface import texts
@@ -414,4 +414,46 @@ def tool09(ctx: ScanContext) -> Iterator[Finding]:
                 f"{', '.join(sorted(clashes))}.",
                 location=item.location,
                 key="collision",
+            )
+
+
+def truncated_paths(item: SurfaceItem) -> list[str]:
+    """Paths where the definition was cut at MAX_JSON_DEPTH while being collected."""
+    out: list[str] = []
+    stack: list[tuple[Any, str]] = [(thaw(item.definition), "")]
+    while stack:
+        node, path = stack.pop()
+        if node == TRUNCATED:
+            out.append(path or "(root)")
+        elif isinstance(node, dict):
+            stack.extend((v, f"{path}.{k}" if path else str(k)) for k, v in node.items())
+        elif isinstance(node, list):
+            stack.extend((v, f"{path}[{i}]") for i, v in enumerate(node))
+    return sorted(out)
+
+
+@check(
+    id="MCPP-TOOL10",
+    title="Tool metadata nested too deeply to inspect",
+    severity=Severity.MEDIUM,
+    references=[R.MCP_SECURITY_BP],
+    rationale=f"""Legitimate schemas are shallow. A definition nested more than
+        {MAX_JSON_DEPTH} levels deep is cut by the scanner (to stay within safe recursion), so
+        text below that depth is not inspected by the other TOOL checks; the client and the
+        model still receive all of it. Extreme nesting is also a known way to crash or slow
+        down JSON consumers.""",
+    remediation="""Flatten the schema (use `$defs` references instead of deep inline nesting)
+        and review the full definition by hand.""",
+)
+def tool10(ctx: ScanContext) -> Iterator[Finding]:
+    for item in ctx.mcp.surface:
+        paths = truncated_paths(item)
+        if paths:
+            shown = ", ".join(p[:120] for p in paths[:3])
+            yield ctx.finding(
+                "MCPP-TOOL10",
+                f"{item.location}: nested deeper than {MAX_JSON_DEPTH} levels at {shown}"
+                + (f" and {len(paths) - 3} more place(s)" if len(paths) > 3 else "")
+                + "; content below was not inspected.",
+                location=item.location,
             )

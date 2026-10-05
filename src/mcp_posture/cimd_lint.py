@@ -297,7 +297,7 @@ def cimd54(inp: LintInput) -> Iterator[Finding]:
         if field in inp.document:
             yield _finding(inp, "MCPP-CIMD54", f"{field} is present.", key=field)
     method = inp.document.get("token_endpoint_auth_method")
-    if method in SHARED_SECRET_METHODS:
+    if isinstance(method, str) and method in SHARED_SECRET_METHODS:
         yield _finding(
             inp,
             "MCPP-CIMD54",
@@ -433,7 +433,7 @@ def cimd57(inp: LintInput) -> Iterator[Finding]:
 def parse_document(raw: bytes) -> tuple[Mapping[str, Any] | None, str | None]:
     try:
         doc = json.loads(raw)
-    except (ValueError, UnicodeDecodeError) as e:
+    except (ValueError, UnicodeDecodeError, RecursionError) as e:
         return None, f"invalid JSON: {e}"
     if not isinstance(doc, dict):
         return None, "the document is not a JSON object"

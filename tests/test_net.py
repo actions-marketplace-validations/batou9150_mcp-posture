@@ -35,13 +35,22 @@ from mcp_posture.net import (
         "fd00::1",
         "::ffff:127.0.0.1",
         "224.0.0.1",
+        # IPv6 forms that embed a private IPv4 address
+        "64:ff9b::a9fe:a9fe",  # NAT64 to 169.254.169.254
+        "64:ff9b::7f00:1",  # NAT64 to 127.0.0.1
+        "::169.254.169.254",  # IPv4-compatible
+        "::ffff:0:a9fe:a9fe",  # SIIT IPv4-translated
+        "2002:a00:1::1",  # 6to4 for 10.0.0.1
     ],
 )
 def test_special_use_addresses(ip: str) -> None:
     assert is_special_use(ipaddress.ip_address(ip))
 
 
-@pytest.mark.parametrize("ip", ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"])
+@pytest.mark.parametrize(
+    "ip",
+    ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111", "64:ff9b::808:808"],  # NAT64 to public
+)
 def test_public_addresses(ip: str) -> None:
     assert not is_special_use(ipaddress.ip_address(ip))
 
@@ -212,3 +221,58 @@ def test_exchange_helpers() -> None:
     assert ex.content_type == "application/json" and ex.ok
     assert ex.header("X") == "1" and ex.header_all("x") == ["1", "2"] and ex.header("y") is None
     assert ex.describe() == "GET https://a/"
+
+
+def test_proxy_mode_still_refuses_private_targets_and_redirect_hops() -> None:
+    """With a proxy the connect-time guard never sees the target; hosts are vetted first."""
+    seen: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        if request.url.host == "8.8.8.8":
+            return httpx.Response(302, headers={"location": "http://169.254.169.254/latest/"})
+        return httpx.Response(200)
+
+    async def go() -> tuple[HttpExchange, HttpExchange]:
+        settings = NetSettings(retries=0, proxy="http://proxy.invalid:3128")
+        async with Fetcher(settings, transport=httpx.MockTransport(handle)) as f:
+            direct = await f.request("GET", "http://10.0.0.1/admin")
+            hop = await f.request("GET", "http://8.8.8.8/")
+        return direct, hop
+
+    direct, hop = asyncio.run(go())
+    assert direct.blocked and direct.status is None
+    assert hop.blocked and hop.redirects == ((302, "http://169.254.169.254/latest/"),)
+    assert seen == ["http://8.8.8.8/"]
+
+
+def test_trickled_headers_hit_one_deadline() -> None:
+    """httpx's timeouts restart on every byte; a server dripping headers must still time out."""
+
+    async def go() -> tuple[HttpExchange, float]:
+        async def drip(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+            await reader.readuntil(b"\r\n\r\n")
+            writer.write(b"HTTP/1.1 200 OK\r\n")
+            try:
+                while True:
+                    writer.write(b"X")
+                    await writer.drain()
+                    await asyncio.sleep(0.05)
+            except (ConnectionError, asyncio.CancelledError):
+                pass
+
+        server = await asyncio.start_server(drip, "127.0.0.1", 0)
+        port = server.sockets[0].getsockname()[1]
+        settings = NetSettings(timeout=0.5, retries=0, allow_private=True)
+        try:
+            async with Fetcher(settings) as f:
+                started = asyncio.get_running_loop().time()
+                # The outer bound turns a regression into a failure instead of a hang.
+                ex = await asyncio.wait_for(f.request("GET", f"http://127.0.0.1:{port}/"), 5)
+                return ex, asyncio.get_running_loop().time() - started
+        finally:
+            server.close()
+
+    ex, elapsed = asyncio.run(go())
+    assert ex.status is None and ex.error and "TimeoutError" in ex.error
+    assert elapsed < 2.0

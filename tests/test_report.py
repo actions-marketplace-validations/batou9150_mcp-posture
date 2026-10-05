@@ -7,12 +7,22 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
 import jsonschema
 
-from mcp_posture.models import Confidence, Report, Severity, SpecRevision, ToolInfo
+from mcp_posture.models import (
+    Confidence,
+    Evidence,
+    Finding,
+    Report,
+    Severity,
+    SpecRevision,
+    TargetResult,
+    ToolInfo,
+)
 from mcp_posture.redact import Redactor
 from mcp_posture.report import render
 from mcp_posture.report.json import json_schema
@@ -172,8 +182,6 @@ def test_markdown_golden() -> None:
 
 
 def test_markdown_rug_pull_details_and_unreachable() -> None:
-    from mcp_posture.models import Evidence, Finding, TargetResult
-
     pin = Finding(
         check_id="MCPP-PIN03",
         title="changed",
@@ -204,7 +212,52 @@ def test_markdown_rug_pull_details_and_unreachable() -> None:
     )
     text = render(report, "markdown", Redactor())
     assert "```diff\n-old\n+new\n```" in text and "changed \\| description" in text
-    assert "Unreachable: x" in text and "(prod)" in text and text.startswith("## ❌")
+    assert "Unreachable: ` x `" in text and "(` prod `)" in text and text.startswith("## ❌")
+
+
+def test_markdown_neutralizes_server_controlled_markup() -> None:
+    """Tool names and messages reach PR comments: no images, links, mentions or fence breaks."""
+    from mcp_posture.context import SurfaceItem, freeze
+    from mcp_posture.pin import unified_diff
+
+    hostile = "x\n```\n![p](https://attacker.example/p.png) @org/team <img src=x>"
+    diff = unified_diff({"description": "a"}, {"description": "b ```` c"}, f"tool:{hostile}")
+    pin = Finding(
+        check_id="MCPP-PIN03",
+        title="Tool definition changed since pin (rug pull)",
+        severity=Severity.HIGH,
+        confidence=Confidence.HIGH,
+        target="https://a.test",
+        location=f"tool:{hostile}",
+        message=f"tool:{hostile} changed `quoted`.",
+        evidence=(Evidence(summary="diff", excerpt=diff),),
+    )
+    item = SurfaceItem(kind="tool", name=hostile, definition=freeze({"name": hostile}))
+    assert item.location.startswith("tool:x")
+    result = TargetResult(
+        target="https://a.test",
+        reachable=True,
+        spec_revision=SpecRevision.R2026_07_28,
+        revision_source="default",
+        findings=(pin,),
+    )
+    report = Report(
+        tool=ToolInfo(version="t"),
+        generated_at=None,
+        mode="passive",
+        fail_on=Severity.HIGH,
+        targets=(result,),
+    )
+    text = render(report, "markdown", Redactor())
+    # The diff block opens with a fence longer than any backtick run inside, and closes it.
+    assert "`````diff\n" in text and "\n`````\n" in text
+    # Outside code (spans and blocks), no markup from the server survives.
+    prose = re.sub(r"(`{3,})diff\n.*?\n\1\n", "", text, flags=re.S)
+    prose = re.sub(r"(`+) .*? \1", "", prose)
+    prose = re.sub(r"<code>.*?</code>", "", prose)
+    assert "\n\n" not in text.split("<summary>")[1].split("</summary>")[0]
+    assert "![p]" not in prose and "@org" not in prose and "<img" not in prose
+    assert "&lt;img src=x&gt;" in text  # HTML-escaped inside <summary>
 
 
 def test_reports_never_emit_raw_control_or_invisible_characters() -> None:

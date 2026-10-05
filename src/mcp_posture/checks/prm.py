@@ -287,7 +287,7 @@ def prm09(ctx: ScanContext) -> Iterator[Finding]:
     parts = jws.split(".")
     try:
         header, claims = _b64json(parts[0]), _b64json(parts[1])
-    except (ValueError, IndexError):
+    except (ValueError, IndexError, RecursionError):
         yield ctx.finding("MCPP-PRM09", "signed_metadata is not a decodable JWS.", location=f.url)
         return
     if not isinstance(header, dict) or not isinstance(claims, dict):

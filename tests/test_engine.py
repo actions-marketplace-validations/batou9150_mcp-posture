@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
 
@@ -15,12 +16,13 @@ from mcp_posture.engine import (
     map_revision,
     run_checks,
     scan,
+    scan_target,
     select_checks,
 )
 from mcp_posture.models import Finding, Severity, SpecRevision
 from mcp_posture.registry import RegisteredCheck, check, load_all
 from tests.conftest import FAST_NET, ids, make_ctx, run_scan
-from tests.fixtures.servers import MCP_URL, AsProfile, McpProfile, router
+from tests.fixtures.servers import MCP_HOST, MCP_URL, AsProfile, McpProfile, Router, router
 
 
 def test_broken_check_becomes_error_finding() -> None:
@@ -122,3 +124,20 @@ def test_checks_never_emit_duplicate_fingerprints() -> None:
         post_process=keep,
     )
     assert seen and len(seen) == len(set(seen))
+
+
+def test_target_timeout_bounds_a_slow_target() -> None:
+    """Each request is bounded; the whole collection of one target is bounded too."""
+
+    async def slow(scope: Any, receive: Any, send: Any) -> None:
+        await asyncio.sleep(10)
+
+    opts = ScanOptions(
+        net=FAST_NET,
+        tls_probe=False,
+        target_timeout=0.3,
+        transport_factory=lambda: Router({f"https://{MCP_HOST}": slow}),
+    )
+    result = asyncio.run(scan_target(Target(url=MCP_URL), opts))
+    assert not result.reachable
+    assert result.error == "scan of this target exceeded 0.3s"

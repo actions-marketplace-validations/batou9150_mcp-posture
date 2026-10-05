@@ -251,8 +251,8 @@
               },
               "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-asm08/",
               "help": {
-                "text": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it.\n\nRemediation: Ensure the authorization server honors `resource` and sets `aud`, and that the MCP server rejects tokens for other audiences. Run `--active` (ACT06, ACT03) to verify.",
-                "markdown": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it.\n\n**Remediation:** Ensure the authorization server honors `resource` and sets `aud`, and that the MCP server rejects tokens for other audiences. Run `--active` (ACT06, ACT03) to verify.\n\n- [RFC 8707 Resource Indicators](https://www.rfc-editor.org/rfc/rfc8707)\n- [MCP 2025-06-18 Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)"
+                "text": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it.\n\nRemediation: Ensure the authorization server honors `resource` and sets `aud`, and that the MCP server rejects tokens for other audiences. Verify it in a test environment: request a token for another resource and confirm the MCP server answers 401.",
+                "markdown": "Audience-restricted tokens are what stops a token minted for one MCP server being replayed against another. No metadata field advertises RFC 8707 support, so a passive scan cannot confirm it.\n\n**Remediation:** Ensure the authorization server honors `resource` and sets `aud`, and that the MCP server rejects tokens for other audiences. Verify it in a test environment: request a token for another resource and confirm the MCP server answers 401.\n\n- [RFC 8707 Resource Indicators](https://www.rfc-editor.org/rfc/rfc8707)\n- [MCP 2025-06-18 Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)"
               },
               "defaultConfiguration": {
                 "level": "note"
@@ -1814,6 +1814,39 @@
               }
             },
             {
+              "id": "MCPP-TOOL10",
+              "name": "ToolMetadataNestedTooDeeplyToInspect",
+              "shortDescription": {
+                "text": "Tool metadata nested too deeply to inspect"
+              },
+              "fullDescription": {
+                "text": "Legitimate schemas are shallow. A definition nested more than 64 levels deep is cut by the scanner (to stay within safe recursion), so text below that depth is not inspected by the other TOOL checks; the client and the model still receive all of it. Extreme nesting is also a known way to crash or slow down JSON consumers."
+              },
+              "helpUri": "https://batou9150.github.io/mcp-posture/checks/mcpp-tool10/",
+              "help": {
+                "text": "Legitimate schemas are shallow. A definition nested more than 64 levels deep is cut by the scanner (to stay within safe recursion), so text below that depth is not inspected by the other TOOL checks; the client and the model still receive all of it. Extreme nesting is also a known way to crash or slow down JSON consumers.\n\nRemediation: Flatten the schema (use `$defs` references instead of deep inline nesting) and review the full definition by hand.",
+                "markdown": "Legitimate schemas are shallow. A definition nested more than 64 levels deep is cut by the scanner (to stay within safe recursion), so text below that depth is not inspected by the other TOOL checks; the client and the model still receive all of it. Extreme nesting is also a known way to crash or slow down JSON consumers.\n\n**Remediation:** Flatten the schema (use `$defs` references instead of deep inline nesting) and review the full definition by hand.\n\n- [MCP Security Best Practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "mcp",
+                  "tool"
+                ],
+                "precision": "high",
+                "security-severity": "5.5",
+                "mcp-spec-revisions": [
+                  "2025-03-26",
+                  "2025-06-18",
+                  "2025-11-25",
+                  "2026-07-28"
+                ]
+              }
+            },
+            {
               "id": "MCPP-TRN01",
               "name": "McpEndpointNotServedOverHttps",
               "shortDescription": {
@@ -2331,7 +2364,7 @@
         },
         {
           "ruleId": "MCPP-TRN05",
-          "ruleIndex": 60,
+          "ruleIndex": 61,
           "level": "note",
           "message": {
             "text": "No Strict-Transport-Security header on 5 HTTPS response(s). [https://mcp.test/mcp]"
@@ -2378,7 +2411,7 @@
         },
         {
           "ruleId": "MCPP-TRN10",
-          "ruleIndex": 65,
+          "ruleIndex": 66,
           "level": "note",
           "message": {
             "text": "https://mcp.test/.well-known/oauth-protected-resource/mcp: missing X-Content-Type-Options: nosniff. [https://mcp.test/mcp]"
@@ -2421,7 +2454,7 @@
           "ruleIndex": 7,
           "level": "note",
           "message": {
-            "text": "Audience restriction cannot be verified passively; run with --active. [https://mcp.test/mcp]"
+            "text": "Audience restriction (RFC 8707) cannot be verified by a passive scan. [https://mcp.test/mcp]"
           },
           "locations": [
             {

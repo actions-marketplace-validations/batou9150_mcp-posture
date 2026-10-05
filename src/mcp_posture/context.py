@@ -13,13 +13,20 @@ from mcp_posture.net import HttpExchange, TlsProbe
 
 FrozenJson = Mapping[str, Any]
 
+# Server-controlled JSON may nest arbitrarily deep; deeper subtrees are replaced by a marker so
+# that freezing, hashing and every check stay within the interpreter's recursion limit.
+MAX_JSON_DEPTH = 64
+TRUNCATED = "<mcp-posture: nested too deeply, truncated>"
 
-def freeze(value: Any) -> Any:
+
+def freeze(value: Any, _depth: int = 0) -> Any:
     """Recursively turn dicts into read-only mappings and lists into tuples."""
+    if isinstance(value, dict | list | tuple) and _depth >= MAX_JSON_DEPTH:
+        return TRUNCATED
     if isinstance(value, dict):
-        return MappingProxyType({k: freeze(v) for k, v in value.items()})
+        return MappingProxyType({k: freeze(v, _depth + 1) for k, v in value.items()})
     if isinstance(value, list | tuple):
-        return tuple(freeze(v) for v in value)
+        return tuple(freeze(v, _depth + 1) for v in value)
     return value
 
 

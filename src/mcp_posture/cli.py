@@ -168,6 +168,7 @@ def _options(cfg: ScanConfig, token: str | None, **extra: Any) -> ScanOptions:
         enable=_selectors(cfg.enable),
         disable=_selectors(cfg.disable),
         concurrency=cfg.concurrency,
+        target_timeout=cfg.target_timeout,
         fail_on=cfg.fail_on,
         tls_probe=cfg.tls_probe,
         **extra,
@@ -291,6 +292,10 @@ def scan_cmd(
     timeout: Annotated[
         float | None, typer.Option("--timeout", help="Per-request timeout in s [10].")
     ] = None,
+    target_timeout: Annotated[
+        float | None,
+        typer.Option("--target-timeout", help="Overall time limit per target in s [300]."),
+    ] = None,
     retries: Annotated[
         int | None, typer.Option("--retries", help="Retries for idempotent requests [2].")
     ] = None,
@@ -317,6 +322,7 @@ def scan_cmd(
         "enable": enable,
         "disable": disable,
         "timeout": timeout,
+        "target_timeout": target_timeout,
         "retries": retries,
         "concurrency": concurrency,
         "proxy": proxy,

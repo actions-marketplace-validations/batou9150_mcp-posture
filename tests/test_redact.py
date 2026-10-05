@@ -44,3 +44,55 @@ def test_logging_filter() -> None:
     log.addHandler(handler)
     log.warning("value=%s", "topsecret")
     assert "topsecret" not in buf.getvalue() and MASK in buf.getvalue()
+
+
+def test_fragments_of_a_secret_are_masked() -> None:
+    secret = "tok_" + "A1b2C3d4E5f6G7h8" * 6
+    r = Redactor([secret])
+    assert "A1b2C3d4E5f6" not in r.redact(f"echo: {secret[:60]}…")  # truncated by a heuristic
+    assert r.redact(f"tail {secret[-20:]} end") == f"tail {MASK} end"
+    assert r.redact("unrelated text A1b2") == "unrelated text A1b2"  # under the fragment size
+
+
+def test_wrapped_or_ellipsized_table_cells_do_not_leak() -> None:
+    """A server echoing the token: rich wraps/ellipsizes cells before the final text pass."""
+    from mcp_posture.models import (
+        Confidence,
+        Finding,
+        Report,
+        Severity,
+        SpecRevision,
+        TargetResult,
+        ToolInfo,
+    )
+    from mcp_posture.report import render
+
+    secret = "s3cr3t-" + "Zq9xW8vU7tS6rR5p" * 9
+    finding = Finding(
+        check_id="MCPP-AUTHN06",
+        title="Error responses leak internals",
+        severity=Severity.MEDIUM,
+        confidence=Confidence.HIGH,
+        target="https://a.test",
+        location="https://a.test",
+        message=f"Body echoes {secret} back.",
+    )
+    report = Report(
+        tool=ToolInfo(version="t"),
+        generated_at=None,
+        mode="passive",
+        fail_on=Severity.HIGH,
+        targets=(
+            TargetResult(
+                target="https://a.test",
+                reachable=True,
+                spec_revision=SpecRevision.R2026_07_28,
+                revision_source="default",
+                findings=(finding,),
+            ),
+        ),
+    )
+    for fmt in ("table", "json", "sarif", "markdown"):
+        out = render(report, fmt, Redactor([secret]))
+        squeezed = "".join(ch for ch in out if ch.isalnum())
+        assert "Zq9xW8vU7tS6" not in squeezed, fmt

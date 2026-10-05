@@ -133,7 +133,7 @@
           "confidence": "low",
           "target": "https://mcp.test/mcp",
           "location": "https://as.test",
-          "message": "Audience restriction cannot be verified passively; run with --active.",
+          "message": "Audience restriction (RFC 8707) cannot be verified by a passive scan.",
           "key": "",
           "evidence": [],
           "suppression": null,

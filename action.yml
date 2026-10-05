@@ -66,7 +66,7 @@ runs:
   using: composite
   steps:
     - name: Set up uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         enable-cache: false
 
@@ -90,9 +90,11 @@ runs:
         mkdir -p "$MCPP_OUT"
         cmd=(scan --fail-on "$MCPP_FAIL_ON" --sarif "$MCPP_OUT/results.sarif"
              --json "$MCPP_OUT/results.json" --markdown "$MCPP_OUT/summary.md")
+        targets=()
         while IFS= read -r line; do
-          line="${line%%#*}"; line="$(echo "$line" | xargs)"
-          [ -n "$line" ] && cmd+=("$line")
+          line="${line%%#*}"  # strip a trailing comment, then surrounding whitespace
+          line="${line#"${line%%[![:space:]]*}"}"; line="${line%"${line##*[![:space:]]}"}"
+          [ -n "$line" ] && targets+=("$line")
         done <<< "$MCPP_TARGETS"
         [ -n "$MCPP_CONFIG" ] && cmd+=(--config "$MCPP_CONFIG")
         [ -n "$MCPP_TARGETS_FILE" ] && cmd+=(--targets-file "$MCPP_TARGETS_FILE")
@@ -104,6 +106,8 @@ runs:
         fi
         # The step shell runs with -e: capture the exit code instead of aborting on findings.
         code=0
+        # `--` keeps target lines positional: a line can never become an option.
+        [ "${#targets[@]}" -gt 0 ] && cmd+=(-- "${targets[@]}")
         uvx --quiet --from "$MCPP_SOURCE" mcp-posture "${cmd[@]}" || code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
         echo "sarif-file=$MCPP_OUT/results.sarif" >> "$GITHUB_OUTPUT"
@@ -123,7 +127,7 @@ runs:
 
     - name: Upload SARIF
       if: always() && inputs.upload-sarif == 'true' && steps.scan.outputs.exit-code != '2'
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
       with:
         sarif_file: ${{ steps.scan.outputs.sarif-file }}
         category: ${{ inputs.sarif-category }}

@@ -49,6 +49,7 @@ class ScanOptions:
     enable: frozenset[str] = frozenset()
     disable: frozenset[str] = frozenset()
     concurrency: int = 4
+    target_timeout: float = 300.0
     fail_on: Severity = Severity.HIGH
     tls_probe: bool = True
     transport_factory: TransportFactory | None = None
@@ -199,7 +200,10 @@ async def collect_target(target: Target, options: ScanOptions) -> Collected:
     transport = options.transport_factory() if options.transport_factory else None
     async with Fetcher(options.net, transport=transport) as fetcher:
         try:
-            ctx, error = await collect(target, fetcher, options)
+            async with asyncio.timeout(options.target_timeout):
+                ctx, error = await collect(target, fetcher, options)
+        except TimeoutError:
+            ctx, error = None, f"scan of this target exceeded {options.target_timeout:g}s"
         except Exception as e:  # collection bugs surface as an unreachable target, not a crash
             log.exception("collection failed for %s", target.url)
             ctx, error = None, f"internal error during collection: {type(e).__name__}: {e}"

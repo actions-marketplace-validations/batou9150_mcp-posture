@@ -18,7 +18,7 @@ required
 │         │              │ https://mcp.test/.well-known/oauth-protected-resource/mcp: missing X-Content-Type-Options:  │
 │         │              │ nosniff.                                                                                    │
 │info     │ MCPP-ASM08   │ Resource indicator (RFC 8707) enforcement not verified                                      │
-│         │              │ Audience restriction cannot be verified passively; run with --active.                       │
+│         │              │ Audience restriction (RFC 8707) cannot be verified by a passive scan.                       │
 │info     │ MCPP-CIMD02  │ Client registration strategies                                                              │
 │         │              │ Registration paths offered: CIMD, pre-registration.                                         │
 └─────────┴──────────────┴─────────────────────────────────────────────────────────────────────────────────────────────┘

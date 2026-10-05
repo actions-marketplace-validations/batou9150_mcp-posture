@@ -125,7 +125,7 @@ def targets_from_config(path: Path) -> list[Target]:
         raise SourceError(f"cannot read {path}: {e.strerror}") from e
     try:
         doc = json.loads(strip_jsonc(text))
-    except ValueError as e:
+    except (ValueError, RecursionError) as e:
         raise SourceError(f"{path} is not valid JSON: {e}") from e
     if not isinstance(doc, Mapping):
         return []

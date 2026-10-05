@@ -18,7 +18,7 @@ from mcp_posture import __version__
 from mcp_posture.context import Challenge, McpProbe, SurfaceItem, SurfaceKind, freeze
 from mcp_posture.discovery import parse_www_authenticate
 from mcp_posture.models import SpecRevision
-from mcp_posture.net import Fetcher, HttpExchange
+from mcp_posture.net import Fetcher, HttpExchange, StopFn
 
 MODERN_VERSION = SpecRevision.R2026_07_28.value
 META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
@@ -35,6 +35,7 @@ _IDENTITY: dict[str, str] = {
     "resource_template": "uriTemplate",
 }
 SSE_READ_TIMEOUT = 5.0
+SSE_FIELDS = (b"data:", b"event:", b"id:", b":", b"retry:")
 
 LISTS: tuple[tuple[str, str, SurfaceKind, str], ...] = (
     ("tools/list", "tools", "tool", "tools"),
@@ -50,7 +51,7 @@ def parse_rpc_body(ex: HttpExchange, request_id: int | None = None) -> dict[str,
         for data in iter_sse_data(ex.text):
             try:
                 msg = json.loads(data)
-            except ValueError:
+            except (ValueError, RecursionError):
                 continue
             if not isinstance(msg, dict) or not ("result" in msg or "error" in msg):
                 continue
@@ -92,15 +93,27 @@ def iter_sse_events(text: str) -> list[tuple[str, str]]:
     return out
 
 
-def _sse_has_response(request_id: int) -> Any:
+def _sse_has_response(request_id: int) -> StopFn:
+    """Stop reading an SSE body once the response to ``request_id`` has arrived.
+
+    Stateful: each call parses only the events completed since the previous call, so a
+    server trickling a large stream costs linear, not quadratic, time.
+    """
+    done = 0  # bytes of the buffer already parsed (always at an event boundary)
+
     def stop(buf: bytes) -> bool:
-        text = buf.decode("utf-8", errors="ignore")
-        if not text.lstrip().startswith(("data:", "event:", "id:", ":", "retry:")):
+        nonlocal done
+        if done == 0 and not buf[:64].lstrip().startswith(SSE_FIELDS):
             return False
-        for data in iter_sse_data(text if text.endswith("\n\n") else text.rsplit("\n\n", 1)[0]):
+        boundary = max(buf.rfind(b"\n\n") + 2, buf.rfind(b"\r\n\r\n") + 4, 0)
+        if boundary <= done:
+            return False
+        events = buf[done:boundary].decode("utf-8", errors="ignore")
+        done = boundary
+        for data in iter_sse_data(events):
             try:
                 msg = json.loads(data)
-            except ValueError:
+            except (ValueError, RecursionError):
                 continue
             if isinstance(msg, dict) and msg.get("id") == request_id:
                 return True

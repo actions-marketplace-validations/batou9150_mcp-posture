@@ -41,6 +41,7 @@ class ScanConfig(BaseModel):
     enable: list[str] = []
     disable: list[str] = []
     timeout: float = Field(10.0, gt=0, le=300)
+    target_timeout: float = Field(300.0, gt=0, le=3600)
     retries: int = Field(2, ge=0, le=10)
     backoff: float = Field(0.5, ge=0, le=30)
     max_bytes: int = Field(1_048_576, ge=1024, le=64 * 1_048_576)

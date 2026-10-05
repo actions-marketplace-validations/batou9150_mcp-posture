@@ -9,9 +9,14 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).parent.parent
+# These tests inspect repository files (action, workflows, Dockerfile) not shipped in the sdist.
+pytestmark = pytest.mark.skipif(
+    not (ROOT / "action.yml").is_file(), reason="needs a repository checkout"
+)
 UNSAFE_EXPANSION = re.compile(r"\$\{\{\s*(inputs|github\.event|github\.head_ref|env)\b")
 
 
@@ -55,7 +60,8 @@ def test_scan_step_reports_exit_code_under_errexit(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     fake = bin_dir / "uvx"
-    fake.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    argv = tmp_path / "argv"
+    fake.write_text(f'#!/bin/sh\nprintf "%s\\n" "$@" > "{argv}"\nexit 1\n', encoding="utf-8")
     fake.chmod(0o755)
     script = tmp_path / "step.sh"
     script.write_text(step["run"], encoding="utf-8")
@@ -66,7 +72,7 @@ def test_scan_step_reports_exit_code_under_errexit(tmp_path: Path) -> None:
         "MCPP_OUT": str(tmp_path / "out"),
         "MCPP_SOURCE": str(ROOT),
         "MCPP_FAIL_ON": "high",
-        "MCPP_TARGETS": "https://mcp.example.com/mcp",
+        "MCPP_TARGETS": "  https://mcp.example.com/mcp  # prod\n--token-file /etc/passwd\nit's\n",
         **{k: "" for k in ("MCPP_CONFIG", "MCPP_TARGETS_FILE", "MCPP_BASELINE", "MCPP_ARGS")},
         "MCPP_ACTION_TOKEN": "",
     }
@@ -79,3 +85,31 @@ def test_scan_step_reports_exit_code_under_errexit(tmp_path: Path) -> None:
     )
     assert result.returncode == 0
     assert "exit-code=1" in output.read_text(encoding="utf-8").splitlines()
+    args = argv.read_text(encoding="utf-8").splitlines()
+    # Targets come last, after `--`, trimmed: a target line can never become an option.
+    sep = args.index("--")
+    assert args[sep + 1 :] == ["https://mcp.example.com/mcp", "--token-file /etc/passwd", "it's"]
+    assert "--token-file" not in args[:sep]
+
+
+PINNED_ACTION = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
+
+
+def test_third_party_actions_and_images_are_pinned() -> None:
+    """Every action is pinned to a commit SHA and every base image to a digest."""
+    workflows = [p.relative_to(ROOT).as_posix() for p in (ROOT / ".github/workflows").glob("*.yml")]
+    for path in ["action.yml", *workflows]:
+        doc = load(path)
+        steps: list[dict[str, Any]] = list(doc.get("runs", {}).get("steps", []))
+        for job in (doc.get("jobs") or {}).values():
+            steps += job.get("steps", [])
+        for step in steps:
+            uses = step.get("uses")
+            if uses and not uses.startswith("./"):
+                assert PINNED_ACTION.match(uses), (path, uses)
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    images = re.findall(r"^FROM (\S+)|--from=(\S+:\S+)", dockerfile, re.M)
+    refs = [a or b for a, b in images]
+    assert refs
+    for ref in refs:
+        assert re.search(r"@sha256:[0-9a-f]{64}$", ref), ref

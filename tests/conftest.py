@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 
+from hypothesis import settings
+
 from mcp_posture.context import AuthDiscovery, McpProbe, ScanContext, Target
 from mcp_posture.engine import ScanOptions, scan_target
 from mcp_posture.models import Finding, SpecRevision, TargetResult
@@ -13,6 +15,8 @@ from mcp_posture.registry import load_all
 from tests.fixtures.servers import MCP_URL, AsProfile, McpProfile, Router, router
 
 FAST_NET = NetSettings(timeout=2.0, retries=0)
+
+settings.register_profile("deep", max_examples=3000)
 
 
 def run_scan(

@@ -55,7 +55,7 @@ def load_lock(path: Path) -> Lock:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except OSError as e:
         raise LockError(f"cannot read baseline {path}: {e.strerror}") from e
-    except ValueError as e:
+    except (ValueError, RecursionError) as e:
         raise LockError(f"baseline {path} is not valid JSON: {e}") from e
     try:
         lock = Lock.model_validate(raw)
@@ -102,7 +102,10 @@ def diff_surface(pinned: Mapping[str, LockItem], current: Iterable[SurfaceItem])
 def unified_diff(old: Mapping[str, Any], new: Mapping[str, Any], name: str, limit: int = 60) -> str:
     a = canonical_json(old, pretty=True).splitlines()
     b = canonical_json(new, pretty=True).splitlines()
-    lines = list(difflib.unified_diff(a, b, f"pinned/{name}", f"current/{name}", lineterm="", n=1))
+    label = json.dumps(name)  # server-controlled: one line, quoted
+    lines = list(
+        difflib.unified_diff(a, b, f"pinned {label}", f"current {label}", lineterm="", n=1)
+    )
     if len(lines) > limit:
         lines = [*lines[:limit], f"... ({len(lines) - limit} more lines)"]
     return "\n".join(lines)

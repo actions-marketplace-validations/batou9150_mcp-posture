@@ -39,10 +39,32 @@ class BlockedAddressError(httpx.ConnectError):
     """Raised when a host resolves to an address the scanner refuses to contact."""
 
 
+# IPv6 ranges that carry an IPv4 address in their low 32 bits: NAT64 (RFC 6052, which Python
+# treats as global), IPv4-compatible (deprecated) and SIIT IPv4-translated addresses.
+_EMBEDDED_V4 = tuple(
+    ipaddress.IPv6Network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "::/96", "::ffff:0:0:0/96")
+)
+
+
+def _embedded_ipv4(ip: ipaddress.IPv6Address) -> ipaddress.IPv4Address | None:
+    if ip.ipv4_mapped is not None:
+        return ip.ipv4_mapped
+    if ip.sixtofour is not None:
+        return ip.sixtofour
+    if any(ip in net for net in _EMBEDDED_V4):
+        return ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+    return None
+
+
 def is_special_use(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """True for loopback, private, link-local (incl. cloud metadata), CGNAT, multicast, reserved."""
-    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
-        return is_special_use(ip.ipv4_mapped)
+    """True for loopback, private, link-local (incl. cloud metadata), CGNAT, multicast, reserved.
+
+    IPv6 forms that embed an IPv4 address are judged by both the IPv6 and the IPv4 address.
+    """
+    if isinstance(ip, ipaddress.IPv6Address):
+        v4 = _embedded_ipv4(ip)
+        if v4 is not None and is_special_use(v4):
+            return True
     return not ip.is_global or ip.is_multicast
 
 
@@ -209,7 +231,7 @@ class HttpExchange:
         """Parsed JSON body, or ``None`` if the body is not JSON."""
         try:
             return json.loads(self.body)
-        except (ValueError, UnicodeDecodeError):
+        except (ValueError, UnicodeDecodeError, RecursionError):  # hostile nesting depth
             return None
 
     def describe(self) -> str:
@@ -382,12 +404,40 @@ class Fetcher:
         started = time.monotonic()
         req_tuple = tuple((k.lower(), v) for k, v in req_headers.items())
         req_body = content.decode() if content is not None else None
+        if self.settings.proxy is not None and not self.settings.allow_private:
+            # The proxy connects for us, so the connect-time guard never sees the target: vet
+            # the host here, on every request and redirect hop. The proxy may still resolve
+            # the name differently (documented in the threat model).
+            parts = urlsplit(url)
+            port = parts.port or (443 if parts.scheme == "https" else 80)
+            try:
+                await resolve_vetted(parts.hostname or "", port, allow_private=False)
+            except BlockedAddressError as e:
+                return HttpExchange(
+                    method, url, req_tuple, req_body, error=str(e), blocked=True, final_url=url
+                )
+            except httpx.ConnectError as e:
+                return HttpExchange(
+                    method, url, req_tuple, req_body, error=_describe_error(e), final_url=url
+                )
         try:
             request = self._client.build_request(method, url, headers=req_headers, content=content)
             # Straight to the transport: httpx's client parses Location even when not following
             # redirects and raises on malformed values, which a hostile server could exploit.
-            response = await self._transport.handle_async_request(request)
+            # One deadline for connect + status line + headers: httpx's own timeouts apply per
+            # read and restart with every byte, so a server trickling headers would never time out.
+            async with asyncio.timeout(self.settings.timeout):
+                response = await self._transport.handle_async_request(request)
             response.request = request
+        except TimeoutError:
+            return HttpExchange(
+                method,
+                url,
+                req_tuple,
+                req_body,
+                error=f"TimeoutError: no response headers within {self.settings.timeout:g}s",
+                final_url=url,
+            )
         except BlockedAddressError as e:
             return HttpExchange(
                 method, url, req_tuple, req_body, error=str(e), blocked=True, final_url=url
@@ -408,7 +458,8 @@ class Fetcher:
                             del buf[limit:]
                             truncated = True
                             break
-                        if stop_when is not None and stop_when(bytes(buf)):
+                        # Stop conditions look for complete lines; skip chunks without one.
+                        if stop_when is not None and b"\n" in chunk and stop_when(bytes(buf)):
                             break
             except TimeoutError:
                 truncated = True

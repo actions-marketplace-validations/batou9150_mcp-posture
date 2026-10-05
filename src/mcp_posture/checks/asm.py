@@ -256,8 +256,8 @@ def asm07(ctx: ScanContext) -> Iterator[Finding]:
         being replayed against another. No metadata field advertises RFC 8707 support, so a
         passive scan cannot confirm it.""",
     remediation="""Ensure the authorization server honors `resource` and sets `aud`, and that
-        the MCP server rejects tokens for other audiences. Run `--active` (ACT06, ACT03) to
-        verify.""",
+        the MCP server rejects tokens for other audiences. Verify it in a test environment:
+        request a token for another resource and confirm the MCP server answers 401.""",
 )
 def asm08(ctx: ScanContext) -> Iterator[Finding]:
     if ctx.active:
@@ -265,7 +265,7 @@ def asm08(ctx: ScanContext) -> Iterator[Finding]:
     for s, _doc in auth_servers(ctx):
         yield ctx.finding(
             "MCPP-ASM08",
-            "Audience restriction cannot be verified passively; run with --active.",
+            "Audience restriction (RFC 8707) cannot be verified by a passive scan.",
             location=s.issuer,
         )
 

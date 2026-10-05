@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from typing import Literal
 
 from mcp_posture.models import Report
-from mcp_posture.redact import Redactor
+from mcp_posture.redact import Redactor, redact_model
 from mcp_posture.report import json as json_report
 from mcp_posture.report import markdown, sarif, table
 
@@ -24,6 +24,7 @@ def render(
     anchors: Mapping[str, sarif.Anchor] | None = None,
     default_anchor: sarif.Anchor = sarif.DEFAULT_ANCHOR,
 ) -> str:
+    report = redact_model(report, redactor)  # field by field, before layout and truncation
     if fmt == "json":
         text = json_report.render(report)
     elif fmt == "sarif":

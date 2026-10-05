@@ -43,33 +43,48 @@ def item_hash(item: SurfaceItem) -> str:
 
 
 def texts(item: SurfaceItem) -> list[tuple[str, str]]:
-    """(field path, text) pairs a model reads: name, title, descriptions, argument docs."""
+    """(field path, text) pairs a model reads: name, title, descriptions, argument docs.
+
+    Server-controlled definitions may use any JSON type anywhere: nothing here assumes a
+    shape, and schema text is collected at any depth (a nesting limit would be an evasion).
+    """
     raw = thaw(item.definition)
+    if not isinstance(raw, dict):
+        return []
     out: list[tuple[str, str]] = []
     for key in ("name", "title", "description"):
         if isinstance(raw.get(key), str):
             out.append((key, raw[key]))
-    for i, arg in enumerate(raw.get("arguments") or []):
-        if isinstance(arg, dict):
-            for key in ("name", "description"):
-                if isinstance(arg.get(key), str):
-                    out.append((f"arguments[{i}].{key}", arg[key]))
+    arguments = raw.get("arguments")
+    if isinstance(arguments, list):
+        for i, arg in enumerate(arguments):
+            if isinstance(arg, dict):
+                for key in ("name", "title", "description"):
+                    if isinstance(arg.get(key), str):
+                        out.append((f"arguments[{i}].{key}", arg[key]))
     for key in ("inputSchema", "outputSchema"):
         _schema_texts(raw.get(key), key, out)
     return out
 
 
-def _schema_texts(node: Any, path: str, out: list[tuple[str, str]], depth: int = 0) -> None:
-    if depth > 8:
-        return
-    if isinstance(node, dict):
-        for k, v in node.items():
-            if k in ("description", "title", "default", "examples", "const") and isinstance(v, str):
-                out.append((f"{path}.{k}", v))
-            elif k == "enum" and isinstance(v, list):
-                out.extend((f"{path}.enum", e) for e in v if isinstance(e, str))
-            else:
-                _schema_texts(v, f"{path}.{k}", out, depth + 1)
-    elif isinstance(node, list):
-        for i, v in enumerate(node):
-            _schema_texts(v, f"{path}[{i}]", out, depth + 1)
+_TEXT_KEYS = frozenset({"description", "title", "default", "examples", "const", "enum"})
+
+
+def _schema_texts(root: Any, root_path: str, out: list[tuple[str, str]]) -> None:
+    """Every string a model may read in a JSON Schema: annotations, values, property names."""
+    stack: list[tuple[Any, str, bool]] = [(root, root_path, False)]
+    while stack:
+        node, path, text_value = stack.pop()
+        if isinstance(node, str):
+            if text_value:
+                out.append((path, node))
+        elif isinstance(node, dict):
+            names = path.endswith(".properties")  # keys are argument names, not keywords
+            for k, v in reversed(list(node.items())):
+                if names:
+                    out.append((f"{path}[{k!r}]", str(k)))
+                keyword = not names and k in _TEXT_KEYS
+                stack.append((v, f"{path}.{k}", text_value or keyword))
+        elif isinstance(node, list):
+            for i in reversed(range(len(node))):
+                stack.append((node[i], f"{path}[{i}]", text_value))

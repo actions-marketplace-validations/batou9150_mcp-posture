@@ -129,3 +129,19 @@ def test_non_mcp_endpoint_is_reachable_but_unknown() -> None:
 
     result = run_scan(transport=lambda: httpx.MockTransport(html))  # type: ignore[arg-type,return-value]
     assert result.reachable and result.transport == "unknown"
+
+
+def test_sse_stop_condition_parses_each_event_once() -> None:
+    from mcp_posture.client import _sse_has_response
+
+    stop = _sse_has_response(7)
+    noise = b'event: message\ndata: {"jsonrpc":"2.0","method":"notifications/progress"}\n\n'
+    buf = b""
+    for _ in range(50):
+        buf += noise
+        assert not stop(buf)
+    buf += b'data: {"jsonrpc":"2.0","id":7,'
+    assert not stop(buf)  # incomplete event
+    buf += b'"result":{}}\r\n\r\n'
+    assert stop(buf)
+    assert not _sse_has_response(1)(b'{"jsonrpc":"2.0","id":1,"result":{}}\n\n')  # not SSE
