@@ -154,6 +154,57 @@ def test_body_is_capped() -> None:
     assert ex.truncated and len(ex.body) == 100 and ex.json() is None
 
 
+class _Chunks(httpx.AsyncByteStream):
+    """A network-like body: httpx.Response(content=...) would inflate it eagerly."""
+
+    def __init__(self, data: bytes, size: int = 65536) -> None:
+        self.data, self.size = data, size
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        for i in range(0, len(self.data), self.size):
+            yield self.data[i : i + self.size]
+
+
+def test_compressed_bodies_are_never_inflated_past_the_cap() -> None:
+    """A gzip bomb (here 50 MiB of zeros in ~50 KiB) stops at the cap; compression is not
+    requested, and a server that compresses anyway is still decoded within the limit."""
+    import gzip
+    import tracemalloc
+    import zlib
+
+    seen: list[str | None] = []
+    bomb = gzip.compress(b"\0" * (50 * 1024 * 1024))
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(request.headers.get("accept-encoding"))
+        body, enc = {
+            "/bomb": (bomb, "gzip"),
+            "/gzip": (gzip.compress(b'{"ok": true}'), "gzip"),
+            "/zlib": (zlib.compress(b'{"ok": 1}'), "deflate"),
+            "/raw": (zlib.compress(b'{"ok": 2}')[2:-4], "deflate"),
+            "/br": (b"\x1b\x00", "br"),
+            "/bad": (b"not gzip", "gzip"),
+        }[request.url.path]
+        return httpx.Response(200, stream=_Chunks(body), headers={"Content-Encoding": enc})
+
+    tracemalloc.start()
+    ex = _fetch(httpx.MockTransport(handle), "GET", "https://a.test/bomb", max_bytes=1000)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    assert ex.truncated and ex.body == b"\0" * 1000
+    assert peak < 5 * 1024 * 1024
+    assert seen == ["identity"]
+
+    def get(path: str) -> HttpExchange:
+        return _fetch(httpx.MockTransport(handle), "GET", f"https://a.test{path}")
+
+    assert get("/gzip").json() == {"ok": True}
+    assert get("/zlib").json() == {"ok": 1}
+    assert get("/raw").json() == {"ok": 2}
+    assert get("/br").body == b"\x1b\x00"  # not decoded, kept as received
+    assert "decode" in (get("/bad").error or "")
+
+
 def test_retries_on_503_then_success() -> None:
     calls = []
 

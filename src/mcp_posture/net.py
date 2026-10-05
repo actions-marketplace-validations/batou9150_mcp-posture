@@ -19,6 +19,7 @@ import socket
 import ssl
 import time
 import warnings
+import zlib
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -187,6 +188,40 @@ class TlsInfo:
     subject_cn: str | None = None
 
 
+class _BoundedDecoder:
+    """gzip/deflate decoding that never inflates more than the caller can still keep.
+
+    httpx inflates each network chunk in full, so one 64 KiB chunk of a gzip bomb becomes
+    tens of MiB in memory before any size check. Other or stacked encodings are kept as
+    received (the body is then opaque, never inflated).
+    """
+
+    def __init__(self, encoding: str) -> None:
+        enc = encoding.strip().lower()
+        self._wbits = {"gzip": 16 + zlib.MAX_WBITS, "x-gzip": 16 + zlib.MAX_WBITS}.get(enc)
+        if enc == "deflate":
+            self._wbits = zlib.MAX_WBITS  # zlib-wrapped; raw deflate is tried on failure
+        self._z = zlib.decompressobj(self._wbits) if self._wbits is not None else None
+        self._started = False
+
+    def decode(self, data: bytes, room: int) -> bytes:
+        if self._z is None:
+            return data
+        out = bytearray()
+        try:
+            while data and len(out) < room:
+                out += self._z.decompress(data, room - len(out))
+                data = self._z.unconsumed_tail
+                self._started = True
+        except zlib.error as e:
+            if not self._started and self._wbits == zlib.MAX_WBITS:
+                self._wbits = -zlib.MAX_WBITS
+                self._z = zlib.decompressobj(self._wbits)
+                return self.decode(data, room)
+            raise httpx.DecodingError(f"cannot decode the response body: {e}") from e
+        return bytes(out)
+
+
 @dataclass(frozen=True)
 class HttpExchange:
     method: str
@@ -296,7 +331,9 @@ class Fetcher:
             transport=self._transport,
             timeout=httpx.Timeout(settings.timeout),
             follow_redirects=False,
-            headers={"User-Agent": settings.user_agent},
+            # No compression: a few KiB of gzip can inflate to hundreds of MiB before the size
+            # cap sees them. Servers that compress anyway go through _BoundedDecoder.
+            headers={"User-Agent": settings.user_agent, "Accept-Encoding": "identity"},
             trust_env=False,
         )
         self.log: list[HttpExchange] = []
@@ -464,7 +501,12 @@ class Fetcher:
             truncated = False
             try:
                 async with asyncio.timeout(read_timeout or self.settings.timeout):
-                    async for chunk in response.aiter_bytes():
+                    decoder = _BoundedDecoder(response.headers.get("content-encoding", ""))
+                    # The raw stream itself: aiter_raw() refuses responses built in memory.
+                    stream = response.stream
+                    assert isinstance(stream, httpx.AsyncByteStream)  # noqa: S101
+                    async for raw in stream:
+                        chunk = decoder.decode(raw, limit + 1 - len(buf))
                         buf.extend(chunk)
                         if len(buf) > limit:
                             del buf[limit:]
