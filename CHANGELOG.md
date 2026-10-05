@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/batou9150/mcp-posture/compare/v1.0.0...v1.1.0) (2026-10-05)
+
+
+### Features
+
+* **login:** default client metadata document, advertised DCR grant types, always show the URL ([0538191](https://github.com/batou9150/mcp-posture/commit/0538191bb6bf30474a1452b7eeba654489e95226))
+* mcp-posture login and scan --login (OAuth code flow + PKCE to your own server) ([96417bd](https://github.com/batou9150/mcp-posture/commit/96417bd5bffa6a545fe8d2b670251ba4509e7064))
+
+
+### Bug Fixes
+
+* **login:** do not report Google's long-form email/profile scopes as missing ([66a4ced](https://github.com/batou9150/mcp-posture/commit/66a4ced90cbf6f04493b7df0002f64939a181a68))
+* **login:** tell how to reuse a client that cannot be deleted (client ID and port) ([3dc59f5](https://github.com/batou9150/mcp-posture/commit/3dc59f5bd0a018440cbd8a8f47b4fecae0f4f092))
+
 ## [1.0.0](https://github.com/batou9150/mcp-posture/compare/v1.0.0-rc1...v1.0.0) (2026-10-05)
 
 

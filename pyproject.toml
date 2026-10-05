@@ -1,6 +1,6 @@
 [project]
 name = "mcp-posture"
-version = "1.0.0"
+version = "1.1.0"
 description = "Security posture scanner for remote MCP servers: OAuth, transport and tool surface, with spec-cited findings and SARIF."
 readme = "README.md"
 license = "MIT"
