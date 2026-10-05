@@ -9,7 +9,7 @@ it audits the OAuth setup (MCP Authorization spec, RFC 9728, RFC 8414, PKCE, RFC
 Metadata Documents), transport hardening and the tool surface (poisoning, shadowing, rug pulls),
 with spec-cited findings and CI-native output (SARIF, JSON, Markdown).
 
-> Status: pre-release (`0.x`), not yet on PyPI. Only scan servers you own or are authorized to test.
+> Status: release candidate (`1.0.0-rc1`), not yet on PyPI. Only scan servers you own or are authorized to test.
 
 ## Why
 
@@ -91,7 +91,7 @@ medium   MCPP-PRM03   resource '.../mcp/' does not match '.../mcp' (trailing sla
 | `ASM` | 13 | RFC 8414 / OIDC metadata: issuer match, HTTPS endpoints, PKCE S256 / `plain`, implicit and password grants, DCR, `iss` (RFC 9207) |
 | `CIMD` | 10 | Client ID Metadata Document support and registration strategy; `cimd lint` rules for your own client's document |
 | `SCP` | 3 | Over-broad scopes, missing `scope` in challenges, PRM/AS scope consistency |
-| `TOOL` | 9 | Instruction-like text, invisible/bidi/tag Unicode, encoded blobs, shadowing, secret paths and exfil URLs, annotations, unconstrained URL/path/code inputs, confusable names |
+| `TOOL` | 10 | Instruction-like text, invisible/bidi/tag Unicode, encoded blobs, shadowing, secret paths and exfil URLs, annotations, unconstrained URL/path/code inputs, confusable names, nesting too deep to inspect |
 | `PIN` | 4 | Rug pulls: tools/prompts/resources added, removed or changed since `mcp-posture pin` |
 
 `mcp-posture checks list` prints the catalogue; `mcp-posture checks show MCPP-ASM04` explains one
@@ -100,8 +100,9 @@ The research behind the catalogue, with every MUST/SHOULD mapped to a check, is 
 [`docs/spec-notes.md`](docs/spec-notes.md).
 
 The default mode is **passive**: metadata `GET`s plus the standard MCP handshake and list calls.
-No tool is ever called. Active probing (Origin validation, forged tokens, CIMD abuse) is opt-in
-and arrives in a later release.
+No tool is ever called. Behaviours that only an active probe could confirm (Origin validation,
+token audience enforcement, PKCE enforcement) are listed as not verified in
+[`docs/spec-notes.md`](docs/spec-notes.md).
 
 ## How it works
 
@@ -181,6 +182,11 @@ for enforcement; it reports, it does not block.
 Scan only servers you own or have written permission to test. Passive mode sends a handful of
 standard requests; even so, unsolicited scanning of third-party infrastructure may violate their
 terms or the law.
+
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) (how to add a check) and [SECURITY.md](SECURITY.md)
+(reporting vulnerabilities, verifying release signatures and attestations).
 
 ## Development
 

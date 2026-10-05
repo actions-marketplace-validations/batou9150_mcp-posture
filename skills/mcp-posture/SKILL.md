@@ -16,9 +16,9 @@ intent of tool descriptions, rank what matters for this user, and write the fix.
 - **Never ask the user to paste a token in the chat.** If listing tools needs authentication,
   tell them to `export MCP_TOKEN=...` in their shell (or `! export ...`) and pass
   `--token-env MCP_TOKEN`. Never echo, log or write a token to a file yourself.
-- **Never run `--active` (opt-in active checks) without explicit confirmation** that the user owns the server *and* its
-  authorization server, in this conversation. Active checks send malformed and hostile requests.
-  If unsure, stay passive.
+- The scanner is passive only. Do not improvise active tests (forged tokens, hostile requests)
+  against the server or its authorization server; recommend the user verify those in their own
+  test environment.
 - Do not use `--allow-private` unless the target is the user's own local or lab server.
 
 ## Prerequisites

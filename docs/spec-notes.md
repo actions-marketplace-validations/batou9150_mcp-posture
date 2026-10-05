@@ -4,7 +4,8 @@ Research notes behind the check catalogue. Each normative statement that a remot
 scanner can observe is mapped to a check ID. Statements a scanner cannot observe are marked
 **N/O** (not observable) with the reason, so the gaps are explicit.
 
-Sources were fetched on 2026-10-04. Check IDs marked *(M3)* land in the next milestone (active checks).
+Sources were fetched on 2026-10-04. IDs marked *(planned)* are reserved for possible opt-in active checks: they are not implemented,
+so the corresponding statements are not verified by the scanner today.
 
 ## MCP specification revisions
 
@@ -24,14 +25,14 @@ the server requires authentication and no token is supplied. `--spec` pins it ex
 
 | Requirement | Revisions | Check |
 |---|---|---|
-| Servers MUST validate `Origin`; invalid → 403 (2025-11-25+) | all | MCPP-ACT01 *(M3)* |
+| Servers MUST validate `Origin`; invalid → 403 (2025-11-25+) | all | MCPP-ACT01 *(planned)* |
 | Local servers SHOULD bind to localhost | all | N/O (remote scanner) |
 | Session ID SHOULD be globally unique and cryptographically secure | ≤ 2025-11-25 | MCPP-TRN08 |
 | Session ID MUST contain only visible ASCII (0x21-0x7E) | ≤ 2025-11-25 | MCPP-TRN08 |
 | Expired session → 404; missing required session → 400 | ≤ 2025-11-25 | N/O passively (needs session manipulation); candidate for ACT |
-| Session IDs MUST NOT be used for authentication (Security Best Practices) | 2025-06-18+ | MCPP-ACT03/ACT04 *(M3)* cover token-per-request |
+| Session IDs MUST NOT be used for authentication (Security Best Practices) | 2025-06-18+ | MCPP-ACT03/ACT04 *(planned)* cover token-per-request |
 | Server SHOULD NOT mint session IDs | 2026-07-28 | MCPP-TRN09 |
-| Invalid/unsupported `MCP-Protocol-Version` → 400 | 2025-06-18+ | MCPP-ACT05 *(M3)* |
+| Invalid/unsupported `MCP-Protocol-Version` → 400 | 2025-06-18+ | MCPP-ACT05 *(planned)* |
 | HTTP+SSE: deprecated; session carried in the endpoint URL | all | MCPP-TRN06, MCPP-TRN07 |
 | TLS per BCP 195 (via RFC 9728 §7.1 / RFC 8414 §6.1) | 2025-06-18+ | MCPP-TRN01, MCPP-TRN02, MCPP-TRN03, MCPP-TRN04, MCPP-TRN05 |
 
@@ -49,16 +50,16 @@ the server requires authentication and no token is supplied. `--spec` pins it ex
 | PRM `resource` identical to the requested URL | RFC 9728 §3.3 | 2025-06-18+ | MCPP-PRM03 |
 | PRM `authorization_servers` with at least one AS | MCP | 2025-06-18+ | MCPP-PRM04 |
 | AS issuer https | RFC 8414 §2 | 2025-06-18+ | MCPP-PRM05 |
-| Tokens MUST NOT be in the query string | MCP, OAuth 2.1 §5.1 | all | MCPP-PRM06, MCPP-ACT02 *(M3)* |
+| Tokens MUST NOT be in the query string | MCP, OAuth 2.1 §5.1 | all | MCPP-PRM06, MCPP-ACT02 *(planned)* |
 | `scopes_supported` RECOMMENDED | RFC 9728 §2 | 2025-06-18+ | MCPP-PRM07 |
 | `resource` MUST NOT have a fragment, SHOULD NOT have a query | RFC 8707 §2 | 2025-06-18+ | MCPP-PRM08 |
 | `signed_metadata`: JWS with `iss`, no `alg=none` | RFC 9728 §2.2 | 2025-06-18+ | MCPP-PRM09 |
 | `offline_access` SHOULD NOT be advertised | MCP | 2026-07-28 | MCPP-PRM10 |
 | PRM variants consistent | (scanner policy) | 2025-06-18+ | MCPP-PRM11 |
 | `resource_metadata` same-origin / HTTPS | (scanner policy; RFC 9728 does not require same origin) | 2025-06-18+ | MCPP-AUTHN04 |
-| Tokens MUST be audience-validated; no token passthrough | MCP, RFC 8707, RFC 9700 §2.3 | 2025-06-18+ | MCPP-ACT03 *(M3)*; info MCPP-ASM08 when passive |
-| Invalid or expired tokens → 401 | MCP, RFC 6750 §3.1 | all | MCPP-ACT04 *(M3)* |
-| Insufficient scope → 403 `insufficient_scope` with `scope` | MCP, RFC 6750 §3.1 | 2025-11-25+ | MCPP-SCP03 *(M3, needs a token)* |
+| Tokens MUST be audience-validated; no token passthrough | MCP, RFC 8707, RFC 9700 §2.3 | 2025-06-18+ | MCPP-ACT03 *(planned)*; info MCPP-ASM08 when passive |
+| Invalid or expired tokens → 401 | MCP, RFC 6750 §3.1 | all | MCPP-ACT04 *(planned)* |
+| Insufficient scope → 403 `insufficient_scope` with `scope` | MCP, RFC 6750 §3.1 | 2025-11-25+ | MCPP-SCP03 *(planned, needs a token)* |
 | Servers MUST account for scope hierarchies | MCP | 2026-07-28 | N/O |
 | Error responses should not leak internals | OWASP (not spec) | all | MCPP-AUTHN06 |
 
@@ -75,13 +76,13 @@ the server requires authentication and no token is supplied. `--spec` pins it ex
 | `plain` prohibited | OAuth 2.1 §4.1.1 | all | MCPP-ASM05 |
 | No implicit / password grants; `grant_types_supported` default includes implicit | OAuth 2.1 §10, RFC 9700 §2.4, RFC 8414 §2 | all | MCPP-ASM06 |
 | `code` response type; no `token` | OAuth 2.1 §10.1 | all | MCPP-ASM07 |
-| Audience-restricted tokens (`resource` honored, `invalid_target`) | RFC 8707 §2 | 2025-06-18+ | MCPP-ASM08 (info), MCPP-ACT06 *(M3)* |
-| DCR exposure (open registration) | RFC 7591 §3 | all | MCPP-ASM09, MCPP-ACT09 *(M3, opt-in)* |
+| Audience-restricted tokens (`resource` honored, `invalid_target`) | RFC 8707 §2 | 2025-06-18+ | MCPP-ASM08 (info), MCPP-ACT06 *(planned)* |
+| DCR exposure (open registration) | RFC 7591 §3 | all | MCPP-ASM09, MCPP-ACT09 *(planned, opt-in)* |
 | CIMD SHOULD; DCR MAY (2025-11-25), deprecated (2026-07-28) | MCP | 2025-11-25+ | MCPP-ASM10, MCPP-CIMD01 |
 | `iss` in authorization responses + `authorization_response_iss_parameter_supported` | RFC 9207, RFC 9700 §2.1, MCP 2026 | 2025-06-18+ | MCPP-ASM11 |
 | `none` MUST NOT appear in auth signing alg lists | RFC 8414 §2 | all | MCPP-ASM12 |
-| Exact redirect URI matching; no open redirect | OAuth 2.1 §2.3.1, RFC 9700 §4.11 | all | MCPP-ACT07 *(M3)* |
-| PKCE enforced (not just advertised) | RFC 7636 §4.4.1, OAuth 2.1 §4.1.1 | all | MCPP-ACT08 *(M3)* |
+| Exact redirect URI matching; no open redirect | OAuth 2.1 §2.3.1, RFC 9700 §4.11 | all | MCPP-ACT07 *(planned)* |
+| PKCE enforced (not just advertised) | RFC 7636 §4.4.1, OAuth 2.1 §4.1.1 | all | MCPP-ACT08 *(planned)* |
 | Refresh token rotation for public clients | OAuth 2.1 §4.3.1, MCP | 2025-06-18+ | N/O (needs a complete user flow) |
 | Short-lived access tokens (SHOULD) | MCP | 2025-06-18+ | N/O |
 | Consent page framing and CSRF protection, `__Host-` cookies (proxies) | MCP Security Best Practices 2025-11-25 | 2025-11-25+ | N/O passively (needs an interactive flow) |
@@ -96,15 +97,15 @@ MCP 2025-11-25 and 2026-07-28 still cite draft-00. The latest IETF draft is
 |---|---|---|
 | Advertise `client_id_metadata_document_supported` | §6 | MCPP-CIMD01 |
 | Registration strategy (CIMD / DCR / pre-registered) | MCP | MCPP-CIMD02 |
-| `client_id` URL must be https with a path, no userinfo, fragment or dot segments | §3 | MCPP-CIMD10 *(M3, active)* |
-| MUST NOT fetch special-use IPs (SSRF) | §8.6 | MCPP-CIMD11 *(M3, active)* |
-| Document `client_id` MUST equal its URL (simple string comparison) | §4, §3 | MCPP-CIMD12 *(M3, active)* |
-| `redirect_uri` MUST exactly match the document | §4.2, MCP | MCPP-CIMD13 *(M3, active)* |
-| Localhost-only redirects SHOULD warn; hostname MUST be displayed | MCP | MCPP-CIMD14 *(M3, active, low confidence)* |
-| MUST NOT follow redirects when fetching | §5 | MCPP-CIMD15 *(M3, active)* |
-| Limit document size (about 5 KB) | §8.7 | MCPP-CIMD16 *(M3, active)* |
-| Respect cache headers; MUST NOT cache errors | §5.2 | MCPP-CIMD17 *(M3, active)* |
-| Client side: no shared secrets, no private keys, required fields | §4.1 | `cimd lint` rules MCPP-CIMD5x *(M3)* |
+| `client_id` URL must be https with a path, no userinfo, fragment or dot segments | §3 | MCPP-CIMD10 *(planned)* |
+| MUST NOT fetch special-use IPs (SSRF) | §8.6 | MCPP-CIMD11 *(planned)* |
+| Document `client_id` MUST equal its URL (simple string comparison) | §4, §3 | MCPP-CIMD12 *(planned)* |
+| `redirect_uri` MUST exactly match the document | §4.2, MCP | MCPP-CIMD13 *(planned)* |
+| Localhost-only redirects SHOULD warn; hostname MUST be displayed | MCP | MCPP-CIMD14 *(planned, low confidence)* |
+| MUST NOT follow redirects when fetching | §5 | MCPP-CIMD15 *(planned)* |
+| Limit document size (about 5 KB) | §8.7 | MCPP-CIMD16 *(planned)* |
+| Respect cache headers; MUST NOT cache errors | §5.2 | MCPP-CIMD17 *(planned)* |
+| Client side: no shared secrets, no private keys, required fields | §4.1 | `cimd lint` rules MCPP-CIMD50-57 |
 
 ## Tool surface
 
