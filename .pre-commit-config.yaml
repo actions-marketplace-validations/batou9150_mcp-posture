@@ -8,6 +8,7 @@ repos:
       - id: trailing-whitespace
         exclude: ^tests/golden/
       - id: check-added-large-files
+        args: [--maxkb=1024]  # docs/demo.gif
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.10

@@ -16,10 +16,10 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -32,13 +32,41 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
       - name: pip-audit (runtime + dev dependencies)
         run: |
           uv export --locked --all-groups --no-emit-project --format requirements-txt > requirements.txt
           uvx pip-audit --strict --disable-pip --requirement requirements.txt
+
+  package:
+    # Runs the release build steps on every change, so release.yml never meets them first.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+      - name: Version strings agree with the release manifest
+        run: |
+          version="$(jq -r '."."' .release-please-manifest.json)"
+          uv run --no-project --with packaging python scripts/check_version.py "v$version"
+      - run: uv build --no-sources
+      - run: uvx twine check --strict dist/*
+      - name: SBOM export
+        run: |
+          uv export --frozen --no-dev --format cyclonedx1.5 --preview-features sbom-export \
+            -o sbom.cdx.json
+          jq -e '.components | length > 0' sbom.cdx.json
+      - name: Install the wheel and run it
+        run: |
+          uv venv /tmp/wheel-env
+          uv pip install --python /tmp/wheel-env dist/*.whl
+          /tmp/wheel-env/bin/mcp-posture version
+          /tmp/wheel-env/bin/mcp-posture checks list > /dev/null
