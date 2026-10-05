@@ -108,7 +108,10 @@ runs:
         code=0
         # `--` keeps target lines positional: a line can never become an option.
         [ "${#targets[@]}" -gt 0 ] && cmd+=(-- "${targets[@]}")
-        uvx --quiet --from "$MCPP_SOURCE" mcp-posture "${cmd[@]}" || code=$?
+        # Dependencies come from the action's own uv.lock (exact versions, hash-checked), not
+        # from a fresh resolution: the scan runs what this release was tested with.
+        UV_PROJECT_ENVIRONMENT="$MCPP_OUT/venv" uv run --quiet --frozen --no-dev \
+          --project "$MCPP_SOURCE" mcp-posture "${cmd[@]}" || code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
         echo "sarif-file=$MCPP_OUT/results.sarif" >> "$GITHUB_OUTPUT"
         echo "json-file=$MCPP_OUT/results.json" >> "$GITHUB_OUTPUT"

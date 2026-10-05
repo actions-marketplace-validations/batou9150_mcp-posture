@@ -14,6 +14,14 @@ from pathlib import Path
 from packaging.version import InvalidVersion, Version
 
 ROOT = Path(__file__).resolve().parent.parent
+# Docs whose `x-release-please-version` lines pin the Action or the CLI to the release.
+MARKED = (
+    "README.md",
+    "docs/ci.md",
+    "skills/mcp-posture/SKILL.md",
+    "skills/mcp-posture/references/remediation.md",
+)
+MARKED_VERSION = re.compile(r"(\d+\.\d+\.\d+\S*?)\s.*x-release-please-version")
 
 
 def versions() -> dict[str, str]:
@@ -24,12 +32,20 @@ def versions() -> dict[str, str]:
     manifest = json.loads((ROOT / ".release-please-manifest.json").read_text(encoding="utf-8"))
     lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
     locked = next(p["version"] for p in lock["package"] if p["name"] == "mcp-posture")
+    marked = {}
+    for path in MARKED:
+        lines = (ROOT / path).read_text(encoding="utf-8").splitlines()
+        for n, line in enumerate(lines, 1):
+            if "x-release-please-version" in line:
+                found = MARKED_VERSION.search(line)
+                marked[f"{path}:{n}"] = found.group(1).strip('"') if found else ""
     return {
         "pyproject.toml": pyproject["project"]["version"],
         "src/mcp_posture/__init__.py": match.group(1) if match else "",
         ".claude-plugin/plugin.json": plugin["version"],
         ".release-please-manifest.json": manifest["."],
         "uv.lock": locked,
+        **marked,
     }
 
 

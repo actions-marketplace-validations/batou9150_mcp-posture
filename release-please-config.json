@@ -10,6 +10,10 @@
       "bump-minor-pre-major": false,
       "extra-files": [
         { "type": "generic", "path": "src/mcp_posture/__init__.py" },
+        { "type": "generic", "path": "README.md" },
+        { "type": "generic", "path": "docs/ci.md" },
+        { "type": "generic", "path": "skills/mcp-posture/SKILL.md" },
+        { "type": "generic", "path": "skills/mcp-posture/references/remediation.md" },
         { "type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version" },
         {
           "type": "toml",

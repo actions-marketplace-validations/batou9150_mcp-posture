@@ -135,7 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: batou9150/mcp-posture@main   # pin a release tag or SHA
+      - uses: batou9150/mcp-posture@v1.1.1 # x-release-please-version
         with:
           targets-file: mcp-servers.txt
           baseline: mcp-posture.lock.json

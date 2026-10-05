@@ -51,7 +51,7 @@ docker run --rm ghcr.io/batou9150/mcp-posture scan https://mcp.example.com/mcp
 **GitHub Action** (SARIF to code scanning, Markdown to the job summary):
 
 ```yaml
-- uses: batou9150/mcp-posture@main   # pin a tag or SHA
+- uses: batou9150/mcp-posture@v1.1.1 # x-release-please-version
   with:
     targets-file: mcp-servers.txt
     fail-on: high
@@ -101,8 +101,9 @@ check (rationale, remediation, references). Check IDs are stable and never reuse
 The research behind the catalogue, with every MUST/SHOULD mapped to a check, is in
 [`docs/spec-notes.md`](docs/spec-notes.md).
 
-The default mode is **passive**: metadata `GET`s plus the standard MCP handshake and list calls.
-No tool is ever called. Behaviours that only an active probe could confirm (Origin validation,
+The default mode is **passive**: metadata `GET`s, the standard MCP handshake and list calls, and a
+few read-only probes (plain HTTP, a nonexistent path, TLS handshakes), all listed in
+[`docs/threat-model.md`](docs/threat-model.md#what-a-passive-scan-sends). No tool is ever called. Behaviours that only an active probe could confirm (Origin validation,
 token audience enforcement, PKCE enforcement) are listed as not verified in
 [`docs/spec-notes.md`](docs/spec-notes.md).
 

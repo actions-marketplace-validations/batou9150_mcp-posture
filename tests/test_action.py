@@ -59,7 +59,7 @@ def test_scan_step_reports_exit_code_under_errexit(tmp_path: Path) -> None:
     step = next(s for s in load("action.yml")["runs"]["steps"] if s.get("id") == "scan")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    fake = bin_dir / "uvx"
+    fake = bin_dir / "uv"
     argv = tmp_path / "argv"
     fake.write_text(f'#!/bin/sh\nprintf "%s\\n" "$@" > "{argv}"\nexit 1\n', encoding="utf-8")
     fake.chmod(0o755)
@@ -86,6 +86,8 @@ def test_scan_step_reports_exit_code_under_errexit(tmp_path: Path) -> None:
     assert result.returncode == 0
     assert "exit-code=1" in output.read_text(encoding="utf-8").splitlines()
     args = argv.read_text(encoding="utf-8").splitlines()
+    # The action's lock file is used as is, never re-resolved.
+    assert args[:6] == ["run", "--quiet", "--frozen", "--no-dev", "--project", str(ROOT)]
     # Targets come last, after `--`, trimmed: a target line can never become an option.
     sep = args.index("--")
     assert args[sep + 1 :] == ["https://mcp.example.com/mcp", "--token-file /etc/passwd", "it's"]

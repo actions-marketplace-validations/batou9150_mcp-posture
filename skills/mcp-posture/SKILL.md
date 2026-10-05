@@ -27,13 +27,12 @@ intent of tool descriptions, rank what matters for this user, and write the fix.
 1. `uv` on PATH (<https://docs.astral.sh/uv/>). If missing, tell the user how to install it and stop.
 2. Network access to the target.
 
-The CLI is run through `uvx`, no install needed:
+The CLI is run through `uvx`, no install needed, pinned to the release this skill was written
+for:
 
 ```bash
-MCPP="uvx mcp-posture"
+MCPP="uvx mcp-posture@1.1.1" # x-release-please-version
 ```
-
-(`uvx mcp-posture@X.Y.Z` pins a version.)
 
 ## Commands
 
@@ -42,7 +41,7 @@ MCPP="uvx mcp-posture"
 | Audit one server | `$MCPP scan <url> -f json --no-timestamp` |
 | Audit the servers configured in their MCP clients | `$MCPP discover` then `$MCPP scan --from-client-config auto -f json` |
 | Include tools behind auth | user runs `mcp-posture scan <url> --login` themselves, or exports `MCP_TOKEN` and you add `--token-env MCP_TOKEN` |
-| Get full tool / prompt / resource definitions for review | `$MCPP pin <url> -o /tmp/mcp-surface.lock.json` (add `--token-env` if needed) |
+| Get full tool / prompt / resource definitions for review | `$MCPP pin <url> -o "$(mktemp -d)/surface.lock.json"` (add `--token-env` if needed) |
 | Detect rug pulls later | `$MCPP pin <url> -o mcp-posture.lock.json`, then `scan --baseline mcp-posture.lock.json` |
 | Explain a finding | `$MCPP checks show MCPP-XXX00` |
 | Lint their own client metadata document | `$MCPP cimd lint <url-or-file>` |
