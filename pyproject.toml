@@ -5,7 +5,7 @@ description = "Security posture scanner for remote MCP servers: OAuth, transport
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "batou9150" }]
+authors = [{ name = "Baptiste PIRAULT" }]
 requires-python = ">=3.12"
 keywords = ["mcp", "model-context-protocol", "oauth", "security", "scanner", "sarif"]
 classifiers = [

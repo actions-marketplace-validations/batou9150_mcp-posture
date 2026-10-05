@@ -2,11 +2,17 @@
 # Needs the local fixtures running: uv run python scripts/demo_servers.py &
 Output docs/demo.gif
 Set Shell "bash"
-Set FontSize 15
+Set FontSize 14
 Set Width 1300
-Set Height 760
+Set Height 800
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 35ms
+
+Hide
+Type "source .venv/bin/activate && export PS1='$ ' COLUMNS=120 && clear"
+Enter
+Sleep 500ms
+Show
 
 Type "mcp-posture scan http://127.0.0.1:8402/mcp --allow-private --enable ASM,PRM,TRN08"
 Enter

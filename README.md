@@ -65,7 +65,7 @@ remediation snippets for common authorization servers and gateways.
 
 Then ask *"audit the security of https://mcp.example.com/mcp"*.
 
-<!-- demo GIF: record with `vhs docs/demo.tape`, then add ![demo](docs/demo.gif) here -->
+![mcp-posture scanning local fixtures](docs/demo.gif)
 
 Sample output (local misconfigured fixture, `scripts/demo_servers.py`):
 
