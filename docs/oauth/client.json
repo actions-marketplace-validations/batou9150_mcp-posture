@@ -1,0 +1,9 @@
+{
+  "client_id": "https://batou9150.github.io/mcp-posture/oauth/client.json",
+  "client_name": "mcp-posture",
+  "client_uri": "https://github.com/batou9150/mcp-posture",
+  "redirect_uris": ["http://127.0.0.1/callback"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none"
+}

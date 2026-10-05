@@ -19,7 +19,9 @@ mcp-posture scan https://mcp.example.com/mcp --token-file ~/.cache/mcp-token
 ```
 
 Your browser opens on the authorization server's login page; once you consent, it redirects to
-a one-shot listener on `127.0.0.1` and the scanner exchanges the code for a token.
+a one-shot listener on `127.0.0.1` and the scanner exchanges the code for a token. The login URL
+is always printed too: if the browser opens in the wrong profile or window, copy it into the
+right one.
 
 ## What the flow does
 
@@ -38,6 +40,7 @@ a one-shot listener on `127.0.0.1` and the scanner exchanges the code for a toke
     |---|---|---|
     | Pre-registered | `--client-id ID` (`--client-secret-env VAR` for a confidential client) | Register `http://127.0.0.1/callback` (any port) or pass the registered port with `--port`. A client secret is only sent to the authorization server you name with `--authorization-server`: the server under test must not be able to redirect your secret elsewhere. |
     | Client ID Metadata Document | `--client-metadata-url URL` | A document you host; it must list `http://127.0.0.1/callback` in `redirect_uris`. It is checked with the `cimd lint` rules first. |
+    | mcp-posture's own document | default when the server supports CIMD | [`oauth/client.json`](oauth/client.json) on this site: a public client with the loopback redirect and no secret, like the documents MCP clients publish. Nothing is created on the authorization server. Pass `--register` to use DCR instead. |
     | Dynamic Client Registration | `--register` | Creates a client on the authorization server, so it needs your consent: `--register`, or a yes at the prompt. The client is deleted afterwards (RFC 7592) unless `--keep-client`. |
 
 4. **Authorization**: code flow with PKCE `S256`, a random `state`, the `resource` parameter
@@ -62,7 +65,7 @@ registration tokens are redacted from logs and errors as soon as they exist.
 
 | Option | Default | |
 |---|---|---|
-| `--client-id`, `--client-secret-env`, `--client-metadata-url`, `--register`, `--keep-client` | | Client identity, above. |
+| `--client-id`, `--client-secret-env`, `--client-metadata-url`, `--register`, `--keep-client` | | Client identity, above. When registering, the grant types follow what the server advertises (`authorization_code`, plus `refresh_token` if listed). |
 | `--scope` | from the challenge, else PRM `scopes_supported` | Space-separated. `offline_access` is dropped from the defaults: refresh tokens are discarded anyway. |
 | `--authorization-server URL` | first in PRM | When PRM lists several. |
 | `--port N` | ephemeral | Loopback port of the redirect URI. |

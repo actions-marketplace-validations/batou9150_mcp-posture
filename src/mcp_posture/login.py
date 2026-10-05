@@ -38,6 +38,10 @@ from mcp_posture.redact import Redactor
 from mcp_posture.report import neutralize
 
 CALLBACK_PATH = "/callback"
+# mcp-posture's own Client ID Metadata Document, published with the docs (docs/oauth/client.json).
+# Used when the authorization server supports CIMD and no other client identity is given, as
+# MCP clients do; it lists the loopback redirect and no secret.
+DEFAULT_CLIENT_METADATA_URL = "https://batou9150.github.io/mcp-posture/oauth/client.json"
 LOOPBACK = "127.0.0.1"
 MAX_REQUEST_HEAD = 8192
 MAX_CALLBACK_CONNECTIONS = 16
@@ -70,6 +74,7 @@ class LoginOptions:
     open_browser: bool = True
     timeout: float = 300.0
     authorization_server: str | None = None
+    default_client: bool = True  # use mcp-posture's own CIMD document when the AS supports CIMD
 
 
 @dataclass
@@ -107,6 +112,7 @@ class _Server:
     cimd: bool
     iss_supported: bool
     auth_methods: tuple[str, ...]
+    grant_types: tuple[str, ...]
     scope: str | None
 
 
@@ -250,6 +256,7 @@ async def _discover(fetcher: Fetcher, url: str, opts: LoginOptions, net: NetSett
         cimd=meta.get("client_id_metadata_document_supported") is True,
         iss_supported=meta.get("authorization_response_iss_parameter_supported") is True,
         auth_methods=_str_list(meta.get("token_endpoint_auth_methods_supported")),
+        grant_types=_str_list(meta.get("grant_types_supported")),
         scope=opts.scope or _without_offline_access(default_scope),
     )
 
@@ -451,15 +458,20 @@ class _Client:
 
 
 async def _register(
-    fetcher: Fetcher, endpoint: str, redirect_uri: str, redactor: Redactor
+    fetcher: Fetcher, server: _Server, endpoint: str, redirect_uri: str, redactor: Redactor
 ) -> _Client:
+    # Some servers insist on refresh_token too (it is what MCP clients register); asking for
+    # it changes nothing here: login discards refresh tokens.
+    grants = ["authorization_code"]
+    if "refresh_token" in server.grant_types:
+        grants.append("refresh_token")
     ex = await fetcher.request(
         "POST",
         endpoint,
         json_body={
             "client_name": f"mcp-posture {__version__}",
             "redirect_uris": [redirect_uri],
-            "grant_types": ["authorization_code"],
+            "grant_types": grants,
             "response_types": ["code"],
             "token_endpoint_auth_method": "none",
         },
@@ -531,16 +543,30 @@ def _jwt_audience(token: str) -> list[str] | None:
 
 async def _choose_client(
     fetcher: Fetcher, server: _Server, opts: LoginOptions, ui: LoginUI
-) -> tuple[Strategy, int]:
-    """Pick the client identity (MCP order) and the listener port it requires."""
+) -> tuple[Strategy, int, str | None]:
+    """Pick the client identity in MCP's order: pre-registered, CIMD, DCR.
+
+    Returns the strategy, the listener port it requires, and the CIMD URL if any.
+    """
     if opts.client_id:
-        return "pre-registered", opts.port
+        return "pre-registered", opts.port, None
     if opts.client_metadata_url:
         if not server.cimd:
             raise LoginError(
                 "the authorization server does not advertise Client ID Metadata Documents"
             )
-        return "cimd", await _check_cimd(fetcher, opts.client_metadata_url, opts.port)
+        port = await _check_cimd(fetcher, opts.client_metadata_url, opts.port)
+        return "cimd", port, opts.client_metadata_url
+    explicit_dcr = opts.register is True and server.registration_endpoint is not None
+    if server.cimd and opts.default_client and not explicit_dcr:
+        try:
+            port = await _check_cimd(fetcher, DEFAULT_CLIENT_METADATA_URL, opts.port)
+        except LoginError as e:
+            if server.registration_endpoint is None:
+                raise
+            ui.say(f"mcp-posture's client metadata document is unavailable ({e}).")
+        else:
+            return "cimd", port, DEFAULT_CLIENT_METADATA_URL
     if server.registration_endpoint is None:
         raise LoginError(
             "no way to obtain a client_id: pass --client-id"
@@ -555,7 +581,7 @@ async def _choose_client(
             "Dynamic Client Registration creates a client on the authorization server: pass "
             "--register to allow it, or use --client-id / --client-metadata-url"
         )
-    return "dcr", opts.port
+    return "dcr", opts.port, None
 
 
 async def _exchange(
@@ -618,7 +644,7 @@ async def login(
             warnings.append(
                 "PKCE S256 support is not advertised (2025-03-26 default endpoints); using it"
             )
-        strategy, port = await _choose_client(fetcher, server, opts, ui)
+        strategy, port, cimd_url = await _choose_client(fetcher, server, opts, ui)
         state = secrets.token_urlsafe(16)
         listener = CallbackServer(state, port)
         await listener.start()
@@ -627,11 +653,11 @@ async def login(
             redirect_uri = listener.redirect_uri
             if strategy == "pre-registered" and opts.client_id:
                 client = _Client(opts.client_id, strategy, secret=opts.client_secret)
-            elif strategy == "cimd" and opts.client_metadata_url:
-                client = _Client(opts.client_metadata_url, strategy)
+            elif strategy == "cimd" and cimd_url:
+                client = _Client(cimd_url, strategy)
             elif server.registration_endpoint is not None:
                 client = await _register(
-                    fetcher, server.registration_endpoint, redirect_uri, redactor
+                    fetcher, server, server.registration_endpoint, redirect_uri, redactor
                 )
             else:  # pragma: no cover - _choose_client guarantees one of the above
                 raise LoginError("no client identity")
@@ -665,8 +691,16 @@ async def login(
                     task = asyncio.ensure_future(_await(opened))
                     opened = True
                     _keep(task)
-            if not opened:
-                ui.say(f"Open this URL in your browser:\n{authorize_url}")
+            # Always show the URL: the browser may open in the wrong profile or window.
+            ui.say(
+                (
+                    "Opened your browser. If it is the wrong profile or nothing happened, "
+                    "open this URL yourself:"
+                    if opened
+                    else "Open this URL in your browser:"
+                )
+                + f"\n{authorize_url}"
+            )
             ui.say(
                 f"Waiting for the authorization response on {redirect_uri} ({opts.timeout:g}s)..."
             )

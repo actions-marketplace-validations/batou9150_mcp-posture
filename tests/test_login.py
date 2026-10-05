@@ -136,6 +136,9 @@ def test_pre_registered_client_happy_path() -> None:
     for secret in (GOOD_TOKEN, token_req["code"], token_req["code_verifier"]):
         assert flow.redactor.redact(secret) == MASK
     assert "refresh-token-never-stored-0123" not in repr(result)
+    # The URL is always shown: the browser may open in the wrong profile.
+    shown = next(m for m in flow.messages if m.startswith("Opened your browser"))
+    assert flow.opened[0] in shown
     assert GOOD_TOKEN not in repr(result)
 
 
@@ -145,6 +148,8 @@ def test_dcr_with_consent_registers_then_deletes_the_client() -> None:
     assert result.strategy == "dcr" and result.client_id == "dcr-1"
     (registration,) = flow.seen("register")
     assert registration["token_endpoint_auth_method"] == "none"
+    # The AS advertises refresh_token; some servers refuse a registration without it.
+    assert registration["grant_types"] == ["authorization_code", "refresh_token"]
     assert registration["redirect_uris"][0].startswith("http://127.0.0.1:")
     assert flow.seen("unregister") == ["dcr-1"]
     assert any("Deleted the temporary client" in m for m in flow.messages)
@@ -212,6 +217,9 @@ def test_cimd_document_problems_are_refused() -> None:
 
 def test_no_client_identity() -> None:
     with pytest.raises(LoginError, match="no way to obtain a client_id"):
+        Flow().run(LoginOptions(default_client=False))
+    # The default client document is unreachable here and there is no DCR to fall back on.
+    with pytest.raises(LoginError, match="cannot fetch the client metadata document"):
         Flow().run(LoginOptions())
 
 
@@ -795,3 +803,59 @@ def test_token_file_write_failure_leaves_nothing(
     assert result.exit_code == 2 and "cannot write" in result.stderr
     assert sorted(p.name for p in locked.iterdir()) == ["token"]
     assert target.read_text() == "old\n"
+
+
+# --- mcp-posture's own client metadata document ------------------------------------------------
+
+DOC_PATH = Path(__file__).parent.parent / "docs" / "oauth" / "client.json"
+
+
+def published_client_app() -> Starlette:
+    async def doc(request: Request) -> Response:
+        return Response(DOC_PATH.read_bytes(), media_type="application/json")
+
+    return Starlette(routes=[Route("/mcp-posture/oauth/client.json", doc)])
+
+
+def test_published_client_document_is_clean_and_matches_the_default() -> None:
+    import json
+
+    from mcp_posture.cimd_lint import LintInput, lint
+    from mcp_posture.login import DEFAULT_CLIENT_METADATA_URL
+    from mcp_posture.models import Severity
+
+    doc = json.loads(DOC_PATH.read_text(encoding="utf-8"))
+    assert doc["client_id"] == DEFAULT_CLIENT_METADATA_URL
+    assert "http://127.0.0.1/callback" in doc["redirect_uris"]
+    findings = lint(
+        LintInput(
+            source=str(DOC_PATH),
+            document=doc,
+            client_id_url=DEFAULT_CLIENT_METADATA_URL,
+            raw_size=DOC_PATH.stat().st_size,
+        )
+    )
+    assert not [f for f in findings if f.severity.at_least(Severity.LOW)], findings
+
+
+def test_default_client_is_used_when_the_server_supports_cimd() -> None:
+    from mcp_posture.login import DEFAULT_CLIENT_METADATA_URL
+
+    flow = Flow(extra={"https://batou9150.github.io": published_client_app()})
+    result = flow.run(LoginOptions())
+    assert result.strategy == "cimd" and result.client_id == DEFAULT_CLIENT_METADATA_URL
+    assert flow.seen("register") == []  # nothing created on the authorization server
+
+
+def test_explicit_register_beats_the_default_client() -> None:
+    flow = Flow(
+        auth=AsProfile(metadata=DCR_METADATA),
+        extra={"https://batou9150.github.io": published_client_app()},
+    )
+    assert flow.run(LoginOptions(register=True)).strategy == "dcr"
+
+
+def test_default_client_unavailable_falls_back_to_registration() -> None:
+    flow = Flow(auth=AsProfile(metadata=DCR_METADATA), confirm=lambda q: True)
+    assert flow.run(LoginOptions()).strategy == "dcr"
+    assert any("client metadata document is unavailable" in m for m in flow.messages)
