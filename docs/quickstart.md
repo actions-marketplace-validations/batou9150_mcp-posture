@@ -5,14 +5,20 @@
 === "uvx (no install)"
 
     ```bash
-    uvx --from git+https://github.com/batou9150/mcp-posture mcp-posture scan https://mcp.example.com/mcp
+    uvx mcp-posture scan https://mcp.example.com/mcp
+    ```
+
+=== "pipx / uv tool"
+
+    ```bash
+    pipx install mcp-posture        # or: uv tool install mcp-posture
+    mcp-posture scan https://mcp.example.com/mcp
     ```
 
 === "Docker"
 
     ```bash
-    docker build -t mcp-posture https://github.com/batou9150/mcp-posture.git
-    docker run --rm mcp-posture scan https://mcp.example.com/mcp
+    docker run --rm ghcr.io/batou9150/mcp-posture scan https://mcp.example.com/mcp
     ```
 
 PyPI and GHCR packages are published from the first tagged release.

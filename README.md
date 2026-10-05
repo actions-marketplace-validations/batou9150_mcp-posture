@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/batou9150/mcp-posture/actions/workflows/ci.yml/badge.svg)](https://github.com/batou9150/mcp-posture/actions/workflows/ci.yml)
 [![Action self-test](https://github.com/batou9150/mcp-posture/actions/workflows/action-selftest.yml/badge.svg)](https://github.com/batou9150/mcp-posture/actions/workflows/action-selftest.yml)
+[![PyPI](https://img.shields.io/pypi/v/mcp-posture.svg)](https://pypi.org/project/mcp-posture/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Security posture scanner for remote MCP servers.** Point it at a Streamable HTTP endpoint and
@@ -9,7 +10,7 @@ it audits the OAuth setup (MCP Authorization spec, RFC 9728, RFC 8414, PKCE, RFC
 Metadata Documents), transport hardening and the tool surface (poisoning, shadowing, rug pulls),
 with spec-cited findings and CI-native output (SARIF, JSON, Markdown).
 
-> Status: release candidate (`1.0.0-rc1`), not yet on PyPI. Only scan servers you own or are authorized to test.
+> Only scan servers you own or are authorized to test.
 
 ## Why
 
@@ -22,8 +23,8 @@ spec section and the MCP revision it applies to (`2025-03-26` through `2026-07-2
 ## Quickstart
 
 ```bash
-# from source until the first PyPI release
-uvx --from git+https://github.com/batou9150/mcp-posture mcp-posture scan https://mcp.example.com/mcp
+# no install needed (or: pipx install mcp-posture / uv tool install mcp-posture)
+uvx mcp-posture scan https://mcp.example.com/mcp
 
 # machine-readable outputs, fail the build on high or worse
 mcp-posture scan https://mcp.example.com/mcp --sarif results.sarif --markdown summary.md --fail-on high
@@ -39,11 +40,10 @@ mcp-posture scan --from-client-config auto
 MCP_TOKEN=... mcp-posture scan https://mcp.example.com/mcp --token-env MCP_TOKEN
 ```
 
-**Docker** (distroless, nonroot):
+**Docker** (distroless, nonroot, signed with cosign):
 
 ```bash
-docker build -t mcp-posture https://github.com/batou9150/mcp-posture.git
-docker run --rm mcp-posture scan https://mcp.example.com/mcp
+docker run --rm ghcr.io/batou9150/mcp-posture scan https://mcp.example.com/mcp
 ```
 
 **GitHub Action** (SARIF to code scanning, Markdown to the job summary):

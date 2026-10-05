@@ -55,7 +55,7 @@ when findings fail the step.
 ## Other CI systems
 
 ```bash
-uvx --from git+https://github.com/batou9150/mcp-posture mcp-posture scan \
+uvx mcp-posture scan \
   --targets-file mcp-servers.txt --sarif mcp-posture.sarif --markdown mcp-posture.md
 ```
 

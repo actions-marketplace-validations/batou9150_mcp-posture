@@ -29,10 +29,10 @@ intent of tool descriptions, rank what matters for this user, and write the fix.
 The CLI is run through `uvx`, no install needed:
 
 ```bash
-MCPP="uvx --from git+https://github.com/batou9150/mcp-posture mcp-posture"
+MCPP="uvx mcp-posture"
 ```
 
-(Once published on PyPI: `uvx mcp-posture`.)
+(`uvx mcp-posture@X.Y.Z` pins a version.)
 
 ## Commands
 
