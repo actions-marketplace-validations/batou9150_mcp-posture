@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/batou9150/mcp-posture/compare/v1.1.0...v1.1.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **tool01:** "silently" alone is API prose; flag it only next to an action on data ([0ea978f](https://github.com/batou9150/mcp-posture/commit/0ea978f23fd50ca02f6a98662df11f840bf24fc2))
+
 ## [1.1.0](https://github.com/batou9150/mcp-posture/compare/v1.0.0...v1.1.0) (2026-10-05)
 
 
