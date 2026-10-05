@@ -141,6 +141,48 @@ _INSTRUCTIONS: tuple[tuple[str, str], ...] = (
         r"(<\s*/?\s*(important|system|instructions?|admin|secret)\s*>|\[/?INST\]|<\|im_start\|>|###\s*system)",
     ),
     ("role", r"\b(system prompt|developer mode|jailbreak|act as (an? )?(admin|root|system))\b"),
+    # French: the same families, so a translated injection is not a blind spot.
+    (
+        "override",
+        r"\b(ignore[rsz]?|oublie[rsz]?|ne tiens pas compte|ne tenez pas compte)\b.{0,30}"
+        r"\b(instructions?|consignes?|r[èe]gles?|directives?)\b.{0,20}"
+        r"\b(pr[ée]c[ée]dentes?|ant[ée]rieures?|ci-dessus|syst[èe]me)",
+    ),
+    (
+        "secrecy",
+        r"\bne\b.{0,15}\b(dis|dites|dire|mentionne[rz]?|r[ée]v[èe]le[rz]?|signale[rz]?|"
+        r"informe[rz]?|pr[ée]viens|pr[ée]venez|pr[ée]venir|montre[rz]?)\b.{0,20}"
+        r"\b(rien|pas|jamais)\b.{0,20}\b(l'|à l'|aux? )?(utilisateur|utilisatrice|usager)",
+    ),
+    (
+        "secrecy",
+        r"\b(secr[èe]tement|en secret|à l'insu de l'utilisat\w*|sans que l'utilisat\w* (ne )?"
+        r"(le )?(sache|remarque|voie)|sans (le )?(dire|signaler|pr[ée]venir|informer) "
+        r"(à )?l'utilisat\w*)",
+    ),
+    (
+        "ordering",
+        r"\b(avant|apr[èe]s|au lieu)\b.{0,15}\b(d'utiliser|d'appeler|d'invoquer|de lancer|"
+        r"tout autre|toute autre|chaque)\b.{0,25}\boutils?\b",
+    ),
+    (
+        "imperative",
+        r"\b(tu dois|vous devez|il faut|tu es oblig[ée]|vous [êe]tes oblig[ée]s?)\b.{0,40}"
+        r"\b(lire|envoyer|inclure|transmettre|t[ée]l[ée]verser|copier|joindre|transf[ée]rer)\b",
+    ),
+    (
+        "exfiltration",
+        r"\b(envoie[rsz]?|envoyez|transmet[st]?|transmettez|transmettre|t[ée]l[ée]verse[rz]?|"
+        r"transf[èée]re[rz]?|poste[rz]?)\b.{0,40}\b(à|vers|via|sur)\b.{0,40}"
+        r"(https?://|webhook|serveur|e-?mail|adresse|point de terminaison)",
+    ),
+    (
+        "exfiltration",
+        r"\b(lis|lisez|lire|ouvre[rz]?|charge[rz]?|r[ée]cup[èe]re[rz]?)\b.{0,30}"
+        r"(~/|\.ssh|id_rsa|\.env\b|identifiants|cl[ée] priv[ée]e|cl[ée] d'api|cl[ée] api|"
+        r"mots? de passe|secrets?)",
+    ),
+    ("role", r"\b(prompt syst[èe]me|invite syst[èe]me|mode d[ée]veloppeur)\b"),
 )
 _INSTRUCTION_RES = tuple((label, re.compile(p, re.I | re.S)) for label, p in _INSTRUCTIONS)
 
