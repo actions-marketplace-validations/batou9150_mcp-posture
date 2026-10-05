@@ -285,3 +285,34 @@ def test_reports_never_emit_raw_control_or_invisible_characters() -> None:
             assert "\\u202e" in text  # escaped, still inspectable
     colored = render(report, "table", Redactor(), color=True)
     assert "\x1b[" in colored and "\x1b[2J" not in colored and "<U+001B>[2J" in colored
+
+
+def test_table_never_cuts_long_urls() -> None:
+    url = "https://" + "a" * 60 + ".example/.well-known/oauth-protected-resource/" + "p" * 60
+    finding = Finding(
+        check_id="MCPP-TRN10",
+        title="Weak security headers on discovery endpoints",
+        severity=Severity.LOW,
+        confidence=Confidence.HIGH,
+        target="https://a.test",
+        location=url,
+        message=f"{url}: missing X-Content-Type-Options: nosniff.",
+    )
+    report = Report(
+        tool=ToolInfo(version="t"),
+        generated_at=None,
+        mode="passive",
+        fail_on=Severity.HIGH,
+        targets=(
+            TargetResult(
+                target="https://a.test",
+                reachable=True,
+                spec_revision=SpecRevision.R2026_07_28,
+                revision_source="default",
+                findings=(finding,),
+            ),
+        ),
+    )
+    text = render(report, "table", Redactor())
+    cells = [line.split("│")[3] for line in text.splitlines() if line.count("│") >= 4]
+    assert url in "".join(c.strip() for c in cells)

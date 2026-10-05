@@ -50,7 +50,7 @@ def render(report: Report, *, color: bool = False, width: int = 120) -> str:
         table = Table(show_header=True, header_style="bold", expand=True, pad_edge=False)
         table.add_column("Severity", no_wrap=True)
         table.add_column("Check", no_wrap=True)
-        table.add_column("Finding", ratio=1)
+        table.add_column("Finding", ratio=1, overflow="fold")  # long URLs wrap, never cut
         for f in findings:
             table.add_row(
                 Text(f.severity.value, style=SEVERITY_STYLE[f.severity]),
