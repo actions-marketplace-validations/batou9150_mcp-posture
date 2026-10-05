@@ -1,0 +1,15 @@
+{
+  "name": "mcp-posture",
+  "description": "Security review of remote MCP servers with the mcp-posture scanner.",
+  "owner": {
+    "name": "Baptiste PIRAULT",
+    "url": "https://github.com/batou9150"
+  },
+  "plugins": [
+    {
+      "name": "mcp-posture",
+      "source": "./",
+      "description": "Security review of remote MCP servers: OAuth posture, transport, tool poisoning and rug pulls, with remediation."
+    }
+  ]
+}

@@ -59,8 +59,8 @@ docker run --rm mcp-posture scan https://mcp.example.com/mcp
 remediation snippets for common authorization servers and gateways.
 
 ```text
-/plugin marketplace add batou9150/nanobanana-skill
-/plugin install mcp-posture@batou9150-skills
+/plugin marketplace add batou9150/mcp-posture
+/plugin install mcp-posture@mcp-posture
 ```
 
 Then ask *"audit the security of https://mcp.example.com/mcp"*.
